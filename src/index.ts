@@ -3,6 +3,8 @@ import { connectDatabase } from './database/connection.js';
 import { config } from './config/index.js';
 import './models/index.js';
 import { userRoutes } from './routes/userRoutes.js';
+import { authRoutes } from './routes/authRoutes.js';
+import authPlugin from './plugins/auth.js';
 
 const start = async () => {
   try {
@@ -12,7 +14,11 @@ const start = async () => {
     // Build Fastify server
     const server = buildServer();
 
+    // Register auth plugin
+    await server.register(authPlugin);
+
     // Register routes
+    await server.register(authRoutes);
     await server.register(userRoutes, { prefix: '/api/users' });
 
     // Start server

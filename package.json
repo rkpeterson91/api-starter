@@ -23,13 +23,18 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@fastify/cookie": "^11.0.2",
+    "@fastify/jwt": "^10.0.0",
+    "@fastify/oauth2": "^8.1.2",
     "dotenv": "^17.2.3",
     "fastify": "^5.7.2",
+    "fastify-plugin": "^5.1.0",
     "pg": "^8.17.2",
     "pg-hstore": "^2.3.4",
     "sequelize": "^6.37.7"
   },
   "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.1.0",
     "@types/pg": "^8.16.0",
     "@vitest/coverage-v8": "^4.0.18",

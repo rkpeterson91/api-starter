@@ -3,22 +3,38 @@ import { buildServer } from '../server.js';
 import { sequelize } from '../database/connection.js';
 import { User } from '../models/index.js';
 import { userRoutes } from '../routes/userRoutes.js';
+import authPlugin from '../plugins/auth.js';
 
 describe('User CRUD Operations', () => {
   const server = buildServer();
+  let authToken: string;
 
   beforeAll(async () => {
     // Connect to test database and sync models
     await sequelize.authenticate();
     await sequelize.sync({ force: true });
     
+    // Register auth plugin and routes
+    await server.register(authPlugin);
     await server.register(userRoutes, { prefix: '/api/users' });
     await server.ready();
+
+    // Create a test user and generate a token for authenticated requests
+    const testUser = await User.create({
+      name: 'Test User',
+      email: 'test@example.com',
+      googleId: 'test-google-id',
+    });
+
+    authToken = server.jwt.sign({
+      userId: testUser.id,
+      email: testUser.email,
+    });
   });
 
   beforeEach(async () => {
-    // Clean up database before each test
-    await User.destroy({ where: {}, truncate: true });
+    // Clean up database before each test (except the test user)
+    await User.destroy({ where: { email: { [sequelize.Sequelize.Op.ne]: 'test@example.com' } } });
   });
 
   afterAll(async () => {
@@ -30,6 +46,9 @@ describe('User CRUD Operations', () => {
     const response = await server.inject({
       method: 'POST',
       url: '/api/users',
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+      },
       payload: {
         name: 'John Doe',
         email: 'john@example.com',
@@ -48,15 +67,21 @@ describe('User CRUD Operations', () => {
     await server.inject({
       method: 'POST',
       url: '/api/users',
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+      },
       payload: {
-        name: 'Test User',
-        email: 'test@example.com',
+        name: 'Jane Doe',
+        email: 'jane@example.com',
       },
     });
 
     const response = await server.inject({
       method: 'GET',
       url: '/api/users',
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+      },
     });
 
     expect(response.statusCode).toBe(200);
@@ -70,6 +95,9 @@ describe('User CRUD Operations', () => {
     const createResponse = await server.inject({
       method: 'POST',
       url: '/api/users',
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+      },
       payload: {
         name: 'Jane Doe',
         email: 'jane@example.com',
@@ -81,6 +109,9 @@ describe('User CRUD Operations', () => {
     const response = await server.inject({
       method: 'GET',
       url: `/api/users/${createdUser.id}`,
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+      },
     });
 
     expect(response.statusCode).toBe(200);
@@ -94,6 +125,9 @@ describe('User CRUD Operations', () => {
     const createResponse = await server.inject({
       method: 'POST',
       url: '/api/users',
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+      },
       payload: {
         name: 'Bob Smith',
         email: 'bob@example.com',
@@ -105,6 +139,9 @@ describe('User CRUD Operations', () => {
     const response = await server.inject({
       method: 'PUT',
       url: `/api/users/${createdUser.id}`,
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+      },
       payload: {
         name: 'Robert Smith',
       },
@@ -121,6 +158,9 @@ describe('User CRUD Operations', () => {
     const createResponse = await server.inject({
       method: 'POST',
       url: '/api/users',
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+      },
       payload: {
         name: 'Alice Johnson',
         email: 'alice@example.com',
@@ -132,6 +172,9 @@ describe('User CRUD Operations', () => {
     const deleteResponse = await server.inject({
       method: 'DELETE',
       url: `/api/users/${createdUser.id}`,
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+      },
     });
 
     expect(deleteResponse.statusCode).toBe(204);
@@ -140,6 +183,9 @@ describe('User CRUD Operations', () => {
     const getResponse = await server.inject({
       method: 'GET',
       url: `/api/users/${createdUser.id}`,
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+      },
     });
     expect(getResponse.statusCode).toBe(404);
   });
@@ -148,6 +194,9 @@ describe('User CRUD Operations', () => {
     const response = await server.inject({
       method: 'GET',
       url: '/api/users/99999',
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+      },
     });
 
     expect(response.statusCode).toBe(404);
@@ -157,6 +206,9 @@ describe('User CRUD Operations', () => {
     const response = await server.inject({
       method: 'PUT',
       url: '/api/users/99999',
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+      },
       payload: {
         name: 'Updated Name',
       },
@@ -171,6 +223,9 @@ describe('User CRUD Operations', () => {
     const response = await server.inject({
       method: 'DELETE',
       url: '/api/users/99999',
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+      },
     });
 
     expect(response.statusCode).toBe(404);
@@ -183,6 +238,9 @@ describe('User CRUD Operations', () => {
     await server.inject({
       method: 'POST',
       url: '/api/users',
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+      },
       payload: {
         name: 'First User',
         email: 'duplicate@example.com',
@@ -193,6 +251,9 @@ describe('User CRUD Operations', () => {
     const response = await server.inject({
       method: 'POST',
       url: '/api/users',
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+      },
       payload: {
         name: 'Second User',
         email: 'duplicate@example.com',
@@ -208,6 +269,9 @@ describe('User CRUD Operations', () => {
     const response = await server.inject({
       method: 'POST',
       url: '/api/users',
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+      },
       payload: {
         name: 'Invalid Email User',
         email: 'not-an-email',
@@ -225,6 +289,7 @@ describe('User CRUD Operations', () => {
       url: '/api/users',
       headers: {
         'content-type': 'application/json',
+        Authorization: `Bearer ${authToken}`,
       },
       payload: 'invalid json{',
     });
@@ -246,6 +311,15 @@ describe('User CRUD Operations', () => {
     expect(data.timestamp).toBeDefined();
   });
 
+  it('should reject requests without auth token', async () => {
+    const response = await server.inject({
+      method: 'GET',
+      url: '/api/users',
+    });
+
+    expect(response.statusCode).toBe(401);
+  });
+
   // Error handling tests with mocking
   it('should handle database error when fetching all users', async () => {
     vi.spyOn(User, 'findAll').mockRejectedValueOnce(new Error('Database connection failed'));
@@ -253,6 +327,9 @@ describe('User CRUD Operations', () => {
     const response = await server.inject({
       method: 'GET',
       url: '/api/users',
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+      },
     });
 
     expect(response.statusCode).toBe(500);
@@ -268,6 +345,9 @@ describe('User CRUD Operations', () => {
     const response = await server.inject({
       method: 'GET',
       url: '/api/users/1',
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+      },
     });
 
     expect(response.statusCode).toBe(500);
@@ -282,6 +362,9 @@ describe('User CRUD Operations', () => {
     const createResponse = await server.inject({
       method: 'POST',
       url: '/api/users',
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+      },
       payload: {
         name: 'Test User',
         email: 'test-update-error@example.com',
@@ -295,6 +378,9 @@ describe('User CRUD Operations', () => {
     const response = await server.inject({
       method: 'PUT',
       url: `/api/users/${createdUser.id}`,
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+      },
       payload: {
         name: 'Updated Name',
       },
@@ -312,6 +398,9 @@ describe('User CRUD Operations', () => {
     const createResponse = await server.inject({
       method: 'POST',
       url: '/api/users',
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+      },
       payload: {
         name: 'Test User',
         email: 'test-delete-error@example.com',
@@ -325,6 +414,9 @@ describe('User CRUD Operations', () => {
     const response = await server.inject({
       method: 'DELETE',
       url: `/api/users/${createdUser.id}`,
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+      },
     });
 
     expect(response.statusCode).toBe(500);

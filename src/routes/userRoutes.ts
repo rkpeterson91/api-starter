@@ -16,6 +16,9 @@ interface UserParams {
 }
 
 export const userRoutes = async (fastify: FastifyInstance) => {
+  // Add authentication to all user routes
+  fastify.addHook('onRequest', fastify.authenticate);
+
   // CREATE - Create a new user
   fastify.post<{ Body: CreateUserBody }>(
     '/',
