@@ -1,0 +1,27 @@
+import { buildServer } from './server.js';
+import { connectDatabase } from './database/connection.js';
+import { config } from './config/index.js';
+import './models/index.js';
+import { userRoutes } from './routes/userRoutes.js';
+
+const start = async () => {
+  try {
+    // Connect to database
+    await connectDatabase();
+
+    // Build Fastify server
+    const server = buildServer();
+
+    // Register routes
+    await server.register(userRoutes, { prefix: '/api/users' });
+
+    // Start server
+    await server.listen({ port: config.port, host: '0.0.0.0' });
+    console.log(`Server running on http://localhost:${config.port}`);
+  } catch (error) {
+    console.error('Error starting server:', error);
+    process.exit(1);
+  }
+};
+
+start();
