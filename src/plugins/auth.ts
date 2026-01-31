@@ -10,8 +10,11 @@ declare module 'fastify' {
     authenticate: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
     googleOAuth2: any;
   }
-  interface FastifyRequest {
-    user?: {
+}
+
+declare module '@fastify/jwt' {
+  interface FastifyJWT {
+    user: {
       userId: number;
       email: string;
     };

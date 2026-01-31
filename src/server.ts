@@ -50,7 +50,7 @@ export const buildServer = () => {
   }
 
   // Error handler to log invalid JSON
-  fastify.setErrorHandler((error, request, reply) => {
+  fastify.setErrorHandler((error: any, request, reply) => {
     if (error.code === 'FST_ERR_CTP_INVALID_JSON_BODY' && config.env === 'development') {
       request.log.error({
         error: error.message,

@@ -4,6 +4,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
+    include: ['src/**/*.test.ts'],
     env: {
       NODE_ENV: 'test',
       DB_NAME: 'api_starter_db_test',

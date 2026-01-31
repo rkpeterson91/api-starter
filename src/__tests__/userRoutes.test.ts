@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vites
 import { buildServer } from '../server.js';
 import { sequelize } from '../database/connection.js';
 import { User } from '../models/index.js';
+import { Op } from 'sequelize';
 import { userRoutes } from '../routes/userRoutes.js';
 import authPlugin from '../plugins/auth.js';
 
@@ -12,7 +13,12 @@ describe('User CRUD Operations', () => {
   beforeAll(async () => {
     // Connect to test database and sync models
     await sequelize.authenticate();
-    await sequelize.sync({ force: true });
+    
+    // Drop all tables to ensure clean slate
+    await sequelize.getQueryInterface().dropAllTables();
+    
+    // Recreate all tables with new schema
+    await sequelize.sync();
     
     // Register auth plugin and routes
     await server.register(authPlugin);
@@ -34,7 +40,7 @@ describe('User CRUD Operations', () => {
 
   beforeEach(async () => {
     // Clean up database before each test (except the test user)
-    await User.destroy({ where: { email: { [sequelize.Sequelize.Op.ne]: 'test@example.com' } } });
+    await User.destroy({ where: { email: { [Op.ne]: 'test@example.com' } } });
   });
 
   afterAll(async () => {
