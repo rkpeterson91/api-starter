@@ -8,8 +8,8 @@ export default defineConfig({
     env: {
       NODE_ENV: 'test',
       DB_NAME: 'api_starter_db_test',
-      DB_USER: 'randall',
-      DB_PASSWORD: '',
+      DB_USER: 'postgres',
+      DB_PASSWORD: 'postgres',
       DB_HOST: 'localhost',
       DB_PORT: '5432',
     },
