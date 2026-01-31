@@ -15,8 +15,8 @@ export default fp(async (fastify: FastifyInstance) => {
       },
       servers: [
         {
-          url: process.env.APP_URL || 'http://localhost:3000',
-          description: 'Development server',
+          url: config.appUrl,
+          description: config.env === 'production' ? 'Production server' : 'Development server',
         },
       ],
       components: {

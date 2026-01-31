@@ -3,6 +3,7 @@ import { User } from '../models/index.js';
 import { getMessages, type Locale } from '../i18n/messages.js';
 import { sendError } from '../utils/errors.js';
 import { userResponseSchema, errorSchema, tokenResponseSchema } from '../schemas/common.js';
+import { config } from '../config/index.js';
 
 interface GoogleUserInfo {
   id: string;

@@ -27,7 +27,7 @@ export default fp(async (fastify: FastifyInstance) => {
 
   // Register JWT
   await fastify.register(fastifyJwt, {
-    secret: process.env.JWT_SECRET || 'change-this-secret-in-production',
+    secret: config.jwt.secret,
     cookie: {
       cookieName: 'refreshToken',
       signed: false,
@@ -35,18 +35,18 @@ export default fp(async (fastify: FastifyInstance) => {
   });
 
   // Register Google OAuth only if credentials are provided
-  if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+  if (config.oauth.google.enabled) {
     await fastify.register(fastifyOAuth2, {
       name: 'googleOAuth2',
       credentials: {
         client: {
-          id: process.env.GOOGLE_CLIENT_ID,
-          secret: process.env.GOOGLE_CLIENT_SECRET,
+          id: config.oauth.google.clientId!,
+          secret: config.oauth.google.clientSecret!,
         },
         auth: fastifyOAuth2.GOOGLE_CONFIGURATION,
       },
       startRedirectPath: '/auth/google',
-      callbackUri: `${process.env.APP_URL || 'http://localhost:3000'}/auth/google/callback`,
+      callbackUri: `${config.appUrl}/auth/google/callback`,
       scope: ['profile', 'email'],
     });
   }
