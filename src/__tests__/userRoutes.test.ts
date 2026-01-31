@@ -13,13 +13,13 @@ describe('User CRUD Operations', () => {
   beforeAll(async () => {
     // Connect to test database and sync models
     await sequelize.authenticate();
-    
+
     // Drop all tables to ensure clean slate
     await sequelize.getQueryInterface().dropAllTables();
-    
+
     // Recreate all tables with new schema
     await sequelize.sync();
-    
+
     // Register auth plugin and routes
     await server.register(authPlugin);
     await server.register(userRoutes, { prefix: '/api/users' });

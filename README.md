@@ -34,6 +34,7 @@ That's it! The API will be running on `http://localhost:3000`
 **Alternative: Docker Setup**
 
 If you prefer using Docker:
+
 ```bash
 pnpm docker:up
 ```
@@ -117,6 +118,7 @@ pnpm setup
 ```
 
 This will:
+
 - Install all dependencies
 - Create both `api_starter_db` and `api_starter_db_test` databases (if they don't exist)
 
@@ -155,9 +157,11 @@ The server will start on `http://localhost:3000`
 ## API Endpoints
 
 ### Health Check
+
 - `GET /health` - Check if the server is running
 
 ### Authentication
+
 - `GET /auth/google` - Initiate Google OAuth login
 - `GET /auth/google/callback` - OAuth callback (handled automatically)
 - `GET /auth/me` - Get current authenticated user (requires JWT authentication)
@@ -211,11 +215,13 @@ curl -X POST http://localhost:3000/auth/dev/token \
 ## Example API Usage
 
 ### Check OAuth Configuration
+
 ```bash
 curl http://localhost:3000/auth/status
 ```
 
 ### Development: Generate Test Token
+
 ```bash
 # For local development without Google OAuth setup
 curl -X POST http://localhost:3000/auth/dev/token \
@@ -226,6 +232,7 @@ curl -X POST http://localhost:3000/auth/dev/token \
 ```
 
 ### Production: Login with Google (Browser)
+
 ```bash
 # Visit this URL in your browser:
 http://localhost:3000/auth/google
@@ -233,17 +240,20 @@ http://localhost:3000/auth/google
 ```
 
 ### Get current user (with token)
+
 ```bash
 curl http://localhost:3000/auth/me \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
 ### Logout
+
 ```bash
 curl -X POST http://localhost:3000/auth/logout
 ```
 
 ### Create a user (with token)
+
 ```bash
 curl -X POST http://localhost:3000/api/users \
   -H "Content-Type: application/json" \
@@ -252,18 +262,21 @@ curl -X POST http://localhost:3000/api/users \
 ```
 
 ### Get all users (with token)
+
 ```bash
 curl http://localhost:3000/api/users \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
 ### Get a user by ID (with token)
+
 ```bash
 curl http://localhost:3000/api/users/1 \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
 ### Update a user
+
 ```bash
 curl -X PUT http://localhost:3000/api/users/1 \
   -H "Content-Type: application/json" \
@@ -271,6 +284,7 @@ curl -X PUT http://localhost:3000/api/users/1 \
 ```
 
 ### Delete a user
+
 ```bash
 curl -X DELETE http://localhost:3000/api/users/1
 ```
@@ -323,9 +337,11 @@ src/
 If OAuth authentication fails:
 
 1. **Check OAuth Configuration**:
+
    ```bash
    curl http://localhost:3000/auth/status
    ```
+
    Should return `"googleOAuthConfigured": true`
 
 2. **Verify Environment Variables**:
@@ -344,11 +360,13 @@ If OAuth authentication fails:
 If `pnpm db:init` fails:
 
 1. **Ensure PostgreSQL is running**:
+
    ```bash
    brew services list | grep postgresql
    ```
 
 2. **Check your PostgreSQL username**:
+
    ```bash
    whoami  # This is often your PostgreSQL username
    ```
@@ -372,6 +390,7 @@ If port 3000 is already in use, change the `PORT` value in your `.env` file.
 If Docker containers are in a restart loop:
 
 1. **Check container logs**:
+
    ```bash
    docker logs api-starter-api
    ```

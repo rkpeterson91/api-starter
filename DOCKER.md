@@ -7,12 +7,15 @@ This guide walks you through setting up Docker containers and GitHub Actions CI/
 ### Quick Start
 
 1. **Build and run with Docker Compose:**
+
    ```bash
    pnpm docker:up
    ```
+
    This starts both PostgreSQL and your API in containers.
 
 2. **View logs:**
+
    ```bash
    pnpm docker:logs
    ```
@@ -81,11 +84,13 @@ ghcr.io/YOUR_USERNAME/api-starter:v1.0.0  (for tagged releases)
 ```
 
 **Pull your image:**
+
 ```bash
 docker pull ghcr.io/YOUR_USERNAME/api-starter:latest
 ```
 
 **Make image public (optional):**
+
 1. Go to your repository page
 2. Click **Packages** on the right sidebar
 3. Click on your package
@@ -102,6 +107,7 @@ git push origin v1.0.0
 ```
 
 This creates images tagged with:
+
 - `v1.0.0`
 - `1.0`
 - `latest`
@@ -109,13 +115,16 @@ This creates images tagged with:
 ## 🔧 Docker Image Hosting Options
 
 ### Option 1: GitHub Container Registry (Current Setup)
+
 - ✅ Free unlimited storage for public repos
 - ✅ Integrated with GitHub
 - ✅ No extra accounts needed
 - Location: `ghcr.io/username/repo`
 
 ### Option 2: Docker Hub
+
 **Setup:**
+
 1. Create account at https://hub.docker.com
 2. Create access token: Settings → Security → New Access Token
 3. Add GitHub secrets:
@@ -129,7 +138,9 @@ This creates images tagged with:
    ```
 
 ### Option 3: AWS ECR
+
 **Setup:**
+
 1. Create ECR repository in AWS Console
 2. Add AWS credentials to GitHub secrets:
    - `AWS_ACCESS_KEY_ID`
@@ -140,6 +151,7 @@ This creates images tagged with:
 ## 🧪 Testing Workflows Locally
 
 Install `act` to test GitHub Actions locally:
+
 ```bash
 brew install act
 act -l  # List workflows
@@ -159,23 +171,28 @@ act push  # Test push event
 ## 🐛 Troubleshooting
 
 ### Workflow Fails: Permission Denied
+
 - Check Settings → Actions → General → Workflow permissions
 - Ensure "Read and write permissions" is selected
 
 ### Can't Pull Docker Image
+
 - Make package public (see Step 5 above)
 - Or authenticate: `echo $GITHUB_TOKEN | docker login ghcr.io -u USERNAME --password-stdin`
 
 ### Database Connection Issues in Docker
+
 - Ensure `DB_HOST=postgres` (service name, not localhost)
 - Check docker-compose.yml health checks
 
 ### Container Keeps Restarting
+
 - Check logs: `docker logs api-starter-api`
 - Verify all environment variables are set in docker-compose.yml
 - Ensure database is healthy: `docker ps` should show "(healthy)" status
 
 ### Different Logging in Docker
+
 **Note**: The production Docker image uses standard JSON logging instead of `pino-pretty` (which is a dev dependency). This is expected behavior - the server automatically detects when `pino-pretty` is unavailable and uses appropriate logging for the environment.
 
 ## 📊 Adding Code Coverage (Optional)

@@ -3,16 +3,19 @@
 ## What Was Added
 
 ✅ **Docker Configuration**
+
 - `Dockerfile` - Multi-stage production-ready image
 - `.dockerignore` - Optimized build context
 - `docker-compose.yml` - Local development environment
 - `.env.docker` - Docker environment template
 
 ✅ **GitHub Actions Workflows**
+
 - `.github/workflows/ci.yml` - Automated testing
 - `.github/workflows/docker.yml` - Docker image builds
 
 ✅ **Documentation**
+
 - `DOCKER.md` - Complete Docker & CI/CD guide
 - Updated `README.md` with Docker commands
 
@@ -106,24 +109,28 @@ git push origin v1.0.0
 ## 🌐 Deployment Options
 
 ### Option 1: DigitalOcean App Platform
+
 1. Create new app from GitHub repo
 2. Select Dockerfile deployment
 3. Add environment variables
 4. Deploy! ($5/month)
 
 ### Option 2: Railway
+
 1. Connect GitHub repo
 2. Select Dockerfile
 3. Add PostgreSQL database
 4. Deploy! (Free tier available)
 
 ### Option 3: AWS ECS/Fargate
+
 1. Push image to ECR or use GHCR
 2. Create ECS task definition
 3. Create service
 4. Configure RDS for database
 
 ### Option 4: Any VPS (DigitalOcean, Linode, etc.)
+
 ```bash
 # On your server
 docker pull ghcr.io/username/api-starter:latest
@@ -139,6 +146,7 @@ docker run -d -p 3000:3000 \
 ## 🔍 Monitoring Your Workflows
 
 ### Check Workflow Status
+
 ```bash
 # Install GitHub CLI
 brew install gh
@@ -151,6 +159,7 @@ gh run watch
 ```
 
 ### Workflow Badges
+
 Add to your README.md:
 
 ```markdown
@@ -161,24 +170,32 @@ Add to your README.md:
 ## 🐛 Troubleshooting
 
 ### ❌ "Permission denied" in GitHub Actions
+
 **Fix:** Enable "Read and write permissions" in Settings → Actions → General
 
 ### ❌ Can't pull Docker image
+
 **Fix:** Make package public OR authenticate:
+
 ```bash
 echo $GITHUB_TOKEN | docker login ghcr.io -u USERNAME --password-stdin
 ```
 
 ### ❌ Tests fail in CI but pass locally
+
 **Check:** Environment variables in `.github/workflows/ci.yml`
 
 ### ❌ Docker build fails
-**Check:** 
+
+**Check:**
+
 - Ensure `pnpm build` works locally
 - Check Node version in Dockerfile matches `.nvmrc`
 
 ### ❌ Docker container keeps restarting
+
 **Check:**
+
 - View logs: `docker logs api-starter-api`
 - Verify database is healthy: `docker ps`
 - Ensure environment variables are set in docker-compose.yml
@@ -194,6 +211,7 @@ echo $GITHUB_TOKEN | docker login ghcr.io -u USERNAME --password-stdin
 ## 🎉 You're Done!
 
 Your repository now has:
+
 - ✅ Automated testing on every push
 - ✅ Docker images built automatically
 - ✅ Production-ready containers

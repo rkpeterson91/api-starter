@@ -16,23 +16,24 @@ export const authRoutes = async (fastify: FastifyInstance) => {
   fastify.get('/auth/google/callback', async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       if (!fastify.googleOAuth2) {
-        return reply.code(503).send({ 
-          error: 'Google OAuth not configured. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET' 
+        return reply.code(503).send({
+          error:
+            'Google OAuth not configured. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET',
         });
       }
 
       const { token } = await fastify.googleOAuth2.getAccessTokenFromAuthorizationCodeFlow(request);
-      
+
       // Fetch user info from Google
       const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
         headers: { Authorization: `Bearer ${token.access_token}` },
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch user info from Google');
       }
 
-      const userInfo = await response.json() as GoogleUserInfo;
+      const userInfo = (await response.json()) as GoogleUserInfo;
 
       // Calculate token expiration time
       const expiresAt = new Date();
@@ -41,8 +42,8 @@ export const authRoutes = async (fastify: FastifyInstance) => {
       // Create or find user in database
       const [user] = await User.findOrCreate({
         where: { email: userInfo.email },
-        defaults: { 
-          name: userInfo.name, 
+        defaults: {
+          name: userInfo.name,
           email: userInfo.email,
           googleId: userInfo.id,
           googleAccessToken: token.access_token,
@@ -61,12 +62,15 @@ export const authRoutes = async (fastify: FastifyInstance) => {
       }
 
       // Issue JWT token
-      const jwtToken = fastify.jwt.sign({ 
-        userId: user.id, 
-        email: user.email 
-      }, {
-        expiresIn: '7d',
-      });
+      const jwtToken = fastify.jwt.sign(
+        {
+          userId: user.id,
+          email: user.email,
+        },
+        {
+          expiresIn: '7d',
+        }
+      );
 
       // Set refresh token in cookie
       reply.setCookie('refreshToken', jwtToken, {
@@ -77,9 +81,9 @@ export const authRoutes = async (fastify: FastifyInstance) => {
         maxAge: 7 * 24 * 60 * 60, // 7 days
       });
 
-      return reply.send({ 
+      return reply.send({
         success: true,
-        token: jwtToken, 
+        token: jwtToken,
         user: {
           id: user.id,
           name: user.name,
@@ -93,24 +97,28 @@ export const authRoutes = async (fastify: FastifyInstance) => {
   });
 
   // Get current user
-  fastify.get('/auth/me', {
-    onRequest: [fastify.authenticate],
-  }, async (request: FastifyRequest, reply: FastifyReply) => {
-    try {
-      const user = await User.findByPk(request.user!.userId, {
-        attributes: ['id', 'name', 'email', 'createdAt', 'updatedAt'],
-      });
+  fastify.get(
+    '/auth/me',
+    {
+      onRequest: [fastify.authenticate],
+    },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const user = await User.findByPk(request.user!.userId, {
+          attributes: ['id', 'name', 'email', 'createdAt', 'updatedAt'],
+        });
 
-      if (!user) {
-        return reply.code(404).send({ error: 'User not found' });
+        if (!user) {
+          return reply.code(404).send({ error: 'User not found' });
+        }
+
+        return reply.send({ user });
+      } catch (error) {
+        request.log.error(error);
+        return reply.code(500).send({ error: 'Failed to fetch user' });
       }
-
-      return reply.send({ user });
-    } catch (error) {
-      request.log.error(error);
-      return reply.code(500).send({ error: 'Failed to fetch user' });
     }
-  });
+  );
 
   // Logout
   fastify.post('/auth/logout', async (request: FastifyRequest, reply: FastifyReply) => {
@@ -139,19 +147,22 @@ export const authRoutes = async (fastify: FastifyInstance) => {
       // Find or create user
       const [user] = await User.findOrCreate({
         where: { email },
-        defaults: { 
-          name: name || 'Test User', 
+        defaults: {
+          name: name || 'Test User',
           email,
         },
       });
 
       // Generate token
-      const token = fastify.jwt.sign({
-        userId: user.id,
-        email: user.email,
-      }, {
-        expiresIn: '7d',
-      });
+      const token = fastify.jwt.sign(
+        {
+          userId: user.id,
+          email: user.email,
+        },
+        {
+          expiresIn: '7d',
+        }
+      );
 
       return reply.send({
         token,

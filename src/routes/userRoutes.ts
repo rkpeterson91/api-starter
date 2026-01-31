@@ -54,11 +54,11 @@ export const userRoutes = async (fastify: FastifyInstance) => {
       try {
         const { id } = request.params;
         const user = await User.findByPk(id);
-        
+
         if (!user) {
           return reply.code(404).send({ error: 'User not found' });
         }
-        
+
         return reply.send(user);
       } catch (error) {
         request.log.error(error);
@@ -77,16 +77,16 @@ export const userRoutes = async (fastify: FastifyInstance) => {
       try {
         const { id } = request.params;
         const { name, email } = request.body;
-        
+
         const user = await User.findByPk(id);
-        
+
         if (!user) {
           return reply.code(404).send({ error: 'User not found' });
         }
-        
+
         if (name) user.name = name;
         if (email) user.email = email;
-        
+
         await user.save();
         return reply.send(user);
       } catch (error) {
@@ -103,11 +103,11 @@ export const userRoutes = async (fastify: FastifyInstance) => {
       try {
         const { id } = request.params;
         const user = await User.findByPk(id);
-        
+
         if (!user) {
           return reply.code(404).send({ error: 'User not found' });
         }
-        
+
         await user.destroy();
         return reply.code(204).send();
       } catch (error) {

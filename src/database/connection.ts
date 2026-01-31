@@ -19,7 +19,7 @@ export const connectDatabase = async (): Promise<void> => {
   try {
     await sequelize.authenticate();
     console.log('Database connection established successfully.');
-    
+
     // Sync models with database (creates tables if they don't exist)
     await sequelize.sync({ alter: config.env === 'development' });
     console.log('Database models synchronized.');

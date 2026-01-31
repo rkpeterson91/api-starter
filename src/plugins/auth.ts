@@ -54,7 +54,7 @@ export default fp(async (fastify: FastifyInstance) => {
   // Auth decorator for protected routes
   fastify.decorate('authenticate', async function (request: FastifyRequest, reply: FastifyReply) {
     try {
-      const decoded = await request.jwtVerify() as any;
+      const decoded = (await request.jwtVerify()) as any;
       request.user = {
         userId: decoded.userId,
         email: decoded.email,
