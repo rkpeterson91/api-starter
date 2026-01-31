@@ -12,7 +12,12 @@
     "test:coverage": "vitest --coverage",
     "db:init": "tsx src/scripts/init-db.ts",
     "db:migrate": "tsx src/database/migrate.ts",
-    "setup": "pnpm install && pnpm db:init"
+    "setup": "pnpm install && pnpm db:init",
+    "docker:build": "docker build -t api-starter .",
+    "docker:run": "docker run -p 3000:3000 --env-file .env api-starter",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f api"
   },
   "keywords": [
     "fastify",

@@ -31,6 +31,15 @@ pnpm dev
 
 That's it! The API will be running on `http://localhost:3000`
 
+**Alternative: Docker Setup**
+
+If you prefer using Docker:
+```bash
+pnpm docker:up
+```
+
+See [DOCKER.md](DOCKER.md) for complete Docker and CI/CD setup instructions.
+
 ## Google OAuth Setup
 
 ### 1. Create Google Cloud Console Project
@@ -126,9 +135,7 @@ pnpm db:init
 ```bash
 pnpm dev
 ```
-setup` - Install dependencies and initialize databases (one command setup)
-- `pnpm db:init` - Initialize/create databases (development and test)
-- `pnpm 
+
 The server will start on `http://localhost:3000`
 
 ## Available Scripts
@@ -140,6 +147,10 @@ The server will start on `http://localhost:3000`
 - `pnpm test:coverage` - Run tests with coverage report
 - `pnpm setup` - Install dependencies and initialize databases (one command setup)
 - `pnpm db:init` - Initialize/create databases (development and test)
+- `pnpm docker:build` - Build Docker image
+- `pnpm docker:up` - Start application with Docker Compose
+- `pnpm docker:down` - Stop Docker containers
+- `pnpm docker:logs` - View Docker logs
 
 ## API Endpoints
 
@@ -285,9 +296,21 @@ src/
 ├── scripts/
 │   └── init-db.ts          # Database initialization script
 ├── index.ts                # Application entry point
-└── server.ts               # Fastify server setup
+└── server.ts               # Fastify server setup (auto-detects pino-pretty availability)
+
+.github/
+└── workflows/
+    ├── ci.yml              # Automated testing workflow
+    └── docker.yml          # Docker build and publish workflow
+
+├── .dockerignore           # Docker build exclusions
 ├── .env.example            # Environment variables example
+├── .env.docker             # Docker environment template
 ├── .nvmrc                  # Node version
+├── docker-compose.yml      # Local Docker development setup
+├── Dockerfile              # Multi-stage production Docker build
+├── DOCKER.md               # Docker and CI/CD documentation
+├── GITHUB_SETUP.md         # GitHub Actions setup guide
 ├── package.json            # Dependencies and scripts
 ├── tsconfig.json           # TypeScript configuration
 └── vitest.config.ts        # Vitest configuration
@@ -343,6 +366,27 @@ If `pnpm db:init` fails:
 ### Port Already in Use
 
 If port 3000 is already in use, change the `PORT` value in your `.env` file.
+
+### Docker Container Restarting
+
+If Docker containers are in a restart loop:
+
+1. **Check container logs**:
+   ```bash
+   docker logs api-starter-api
+   ```
+
+2. **Common issues**:
+   - Database connection failed: Verify `DB_HOST=postgres` in docker-compose.yml
+   - Missing environment variables: Check docker-compose.yml environment section
+
+3. **Rebuild containers**:
+   ```bash
+   pnpm docker:down
+   pnpm docker:up
+   ```
+
+**Note**: The production Docker image doesn't include `pino-pretty` for logging. The server automatically detects this and uses standard JSON logging in containers.
 
 ## Technologies Used
 

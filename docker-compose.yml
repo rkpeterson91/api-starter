@@ -1,0 +1,55 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: api-starter-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: api_starter_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - api-network
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: api-starter-api
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: api_starter_db
+      JWT_SECRET: your-dev-jwt-secret-change-me
+      APP_URL: http://localhost:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - api-network
+    # For development with hot reload, uncomment:
+    # volumes:
+    #   - ./src:/app/src
+    # command: pnpm dev
+
+volumes:
+  postgres_data:
+
+networks:
+  api-network:
+    driver: bridge

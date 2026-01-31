@@ -1,9 +1,18 @@
 import Fastify from 'fastify';
 import { config } from './config/index.js';
 
+// Check if pino-pretty is available (dev dependency)
+let hasPinoPretty = false;
+try {
+  await import('pino-pretty');
+  hasPinoPretty = true;
+} catch {
+  // pino-pretty not available (production build)
+}
+
 export const buildServer = () => {
   const fastify = Fastify({
-    logger: config.env === 'development' 
+    logger: config.env === 'development' && hasPinoPretty
       ? {
           transport: {
             target: 'pino-pretty',
@@ -26,7 +35,9 @@ export const buildServer = () => {
             },
           },
         }
-      : { level: 'error' },
+      : config.env === 'development'
+      ? { level: 'info' }  // Development without pino-pretty
+      : { level: 'error' }, // Production
   });
 
   // Log request body after parsing in development
