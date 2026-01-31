@@ -51,8 +51,9 @@ Your workflows are already configured in `.github/workflows/`. They will run aut
 2. Navigate to **Settings** → **Actions** → **General**
 3. Scroll down to **Workflow permissions**
 4. Select **"Read and write permissions"**
-5. Check **"Allow GitHub Actions to create and approve pull requests"**
-6. Click **Save**
+5. Click **Save**
+
+**Note:** You do NOT need "Allow GitHub Actions to create and approve pull requests" - that permission is only required for workflows that automatically create PRs (like Dependabot). Our workflows only need write access to publish Docker images.
 
 ### Step 3: Push Your Changes
 

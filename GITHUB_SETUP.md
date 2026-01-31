@@ -52,8 +52,9 @@ git push origin main
 3. Click **General**
 4. Scroll to **Workflow permissions**
 5. Select: **"Read and write permissions"** ✅
-6. Check: **"Allow GitHub Actions to create and approve pull requests"** ✅
-7. Click **Save**
+6. Click **Save**
+
+**Note:** You do NOT need to enable "Allow GitHub Actions to create and approve pull requests" - that's only needed for automated PR creation workflows.
 
 ### 4. Verify Workflows
 
