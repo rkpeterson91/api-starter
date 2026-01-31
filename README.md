@@ -149,13 +149,14 @@ The server will start on `http://localhost:3000`
 ### Authentication
 - `GET /auth/google` - Initiate Google OAuth login
 - `GET /auth/google/callback` - OAuth callback (handled automatically)
-- `GET /auth/me` - Get current authenticated user (requires authentication)
-- `POST /auth/logout` - Logout and clear session
-- `GET /auth/status` - Check if OAuth is configured
+- `GET /auth/me` - Get current authenticated user (requires JWT authentication)
+- `POST /auth/logout` - Logout and clear refresh token cookie
+- `GET /auth/status` - Check if Google OAuth is configured
+- `POST /auth/dev/token` - Generate test token (development only)
 
 ### Users (CRUD Operations - Protected Routes)
 
-**All user routes require authentication via JWT token**
+**All user routes require authentication via JWT token in Authorization header**
 
 - `POST /api/users` - Create a new user
 - `GET /api/users` - Get all users
@@ -165,23 +166,70 @@ The server will start on `http://localhost:3000`
 
 ## Authentication Flow
 
+### Production Flow (Google OAuth)
+
 1. **Login**: Navigate to `http://localhost:3000/auth/google` in your browser
 2. **Authorize**: Sign in with your Google account
-3. **Get Token**: After successful login, you'll receive a JWT token
-4. **Use Token**: Include the token in the `Authorization` header for protected routes
+3. **Redirect**: After successful login, you'll be redirected with a JWT token
+4. **Cookie Set**: A refresh token is automatically stored in an httpOnly cookie (valid for 7 days)
+5. **Use Token**: Include the JWT token in the `Authorization: Bearer <token>` header for protected routes
+
+### Development Flow (Test Tokens)
+
+For local development without setting up Google OAuth, use the dev token endpoint:
+
+```bash
+# Generate a test token
+curl -X POST http://localhost:3000/auth/dev/token \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","name":"Test User"}'
+
+# Response includes token you can use for testing
+{
+  "token": "eyJhbGciOiJIUzI1...",
+  "user": {
+    "id": 1,
+    "name": "Test User",
+    "email": "test@example.com"
+  }
+}
+```
+
+**Note**: The `/auth/dev/token` endpoint is only available when `NODE_ENV=development`
 
 ## Example API Usage
 
-### Login with Google (Browser)
+### Check OAuth Configuration
+```bash
+curl http://localhost:3000/auth/status
+```
+
+### Development: Generate Test Token
+```bash
+# For local development without Google OAuth setup
+curl -X POST http://localhost:3000/auth/dev/token \
+  -H "Content-Type: application/json" \
+  -d '{"email":"dev@example.com","name":"Dev User"}'
+
+# Save the token from response for subsequent requests
+```
+
+### Production: Login with Google (Browser)
 ```bash
 # Visit this URL in your browser:
 http://localhost:3000/auth/google
+# After login, extract the token from the response
 ```
 
 ### Get current user (with token)
 ```bash
 curl http://localhost:3000/auth/me \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+### Logout
+```bash
+curl -X POST http://localhost:3000/auth/logout
 ```
 
 ### Create a user (with token)
@@ -228,9 +276,9 @@ src/
 │   └── connection.ts       # Database connection
 ├── models/
 │   ├── index.ts            # Model exports
-│   └── User.ts             # User model (with OAuth support)
+│   └── User.ts             # User model with Google OAuth fields (googleId, tokens, etc.)
 ├── plugins/
-│   └── auth.ts             # Authentication plugin (OAuth2, JWT, Cookie)
+│   └── auth.ts             # Authentication plugin (Google OAuth2, JWT, Cookie support)
 ├── routes/
 │   ├── authRoutes.ts       # Authentication routes
 │   └── userRoutes.ts       # User CRUD routes
@@ -246,6 +294,27 @@ src/
 ```
 
 ## Troubleshooting
+
+### Google OAuth Not Working
+
+If OAuth authentication fails:
+
+1. **Check OAuth Configuration**:
+   ```bash
+   curl http://localhost:3000/auth/status
+   ```
+   Should return `"googleOAuthConfigured": true`
+
+2. **Verify Environment Variables**:
+   - Ensure `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set in `.env`
+   - Confirm `APP_URL` matches your development URL
+
+3. **Use Development Token Instead**:
+   ```bash
+   curl -X POST http://localhost:3000/auth/dev/token \
+     -H "Content-Type: application/json" \
+     -d '{"email":"test@example.com"}'
+   ```
 
 ### PostgreSQL Connection Issues
 
@@ -295,6 +364,9 @@ If port 3000 is already in use, change the `PORT` value in your `.env` file.
 3. **Use HTTPS in production** - OAuth requires HTTPS for security
 4. **Rotate secrets regularly** - Update JWT secrets and OAuth credentials periodically
 5. **Validate redirect URIs** - Ensure your Google Console redirect URIs match your deployment URLs
+6. **Development token endpoint** - The `/auth/dev/token` endpoint is automatically disabled in production
+7. **Cookie security** - Refresh tokens use httpOnly cookies with secure flag in production
+8. **JWT expiration** - Access tokens expire after 7 days, requiring re-authentication
 
 ## Testing
 
