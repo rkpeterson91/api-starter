@@ -15,6 +15,7 @@ build/
 .env.test
 .env.docker
 !.env.example
+!.env.test.example
 
 # Logs
 *.log

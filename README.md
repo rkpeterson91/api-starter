@@ -9,6 +9,23 @@ A barebones Node.js backend API built with TypeScript, Fastify, PostgreSQL, Sequ
 - pnpm package manager
 - **Google Cloud Console project** (for OAuth authentication)
 
+### PostgreSQL User Setup
+
+**Important**: This project uses the `postgres` superuser for both development and testing. If you don't have this user set up:
+
+```bash
+# Check if postgres user exists
+psql -U postgres -d postgres -c "SELECT 1;" 2>/dev/null && echo "✓ postgres user exists" || echo "✗ postgres user not found"
+
+# If not found, create it (replace 'your_username' with your PostgreSQL username, often your system username)
+psql -U $(whoami) -d postgres -c "CREATE USER postgres WITH SUPERUSER PASSWORD 'postgres';"
+
+# Verify it works
+psql -U postgres -d postgres -c "SELECT version();"
+```
+
+**Why postgres user?** Using a consistent database user across development, testing, and CI/CD prevents authentication issues and ensures tests run reliably.
+
 ## Quick Start (For New Developers)
 
 If you're pulling down this repo for the first time:
@@ -96,7 +113,7 @@ Copy the example environment file and update with your database credentials:
 cp .env.example .env
 ```
 
-Edit `.env` and update the database configuration if needed (defaults work for local PostgreSQL):
+Edit `.env` - the default values should work if you created the `postgres` user above:
 
 ```env
 NODE_ENV=development
@@ -105,9 +122,11 @@ PORT=3000
 DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=api_starter_db
-DB_USER=your_postgres_user
-DB_PASSWORD=your_postgres_password
+DB_USER=postgres
+DB_PASSWORD=postgres
 ```
+
+**Note**: If you prefer using a different PostgreSQL user, update both `.env` and create a `.env.test` file with the same credentials.
 
 ### 4. Quick Setup (Recommended)
 
@@ -153,6 +172,22 @@ The server will start on `http://localhost:3000`
 - `pnpm docker:up` - Start application with Docker Compose
 - `pnpm docker:down` - Stop Docker containers
 - `pnpm docker:logs` - View Docker logs
+
+## Testing Configuration
+
+Tests use the `api_starter_db_test` database with credentials from [vitest.config.ts](vitest.config.ts) (defaults to `postgres`/`postgres`).
+
+**To override test database credentials**, create a `.env.test` file (gitignored):
+
+```bash
+DB_USER=your_postgres_user
+DB_PASSWORD=your_postgres_password
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=api_starter_db_test
+```
+
+**Important**: Test credentials must match a PostgreSQL user with sufficient privileges to create and access the test database.
 
 ## API Endpoints
 
@@ -365,21 +400,30 @@ If `pnpm db:init` fails:
    brew services list | grep postgresql
    ```
 
-2. **Check your PostgreSQL username**:
+2. **Verify postgres user exists**:
 
    ```bash
-   whoami  # This is often your PostgreSQL username
+   psql -U postgres -d postgres -c "SELECT 1;"
    ```
 
-3. **Update `.env` with correct credentials**:
-   - Set `DB_USER` to your PostgreSQL username
-   - Set `DB_PASSWORD` if your PostgreSQL user has a password
+3. **If postgres user doesn't exist, create it**:
+
+   ```bash
+   # Use your local PostgreSQL username (often your system username)
+   psql -U $(whoami) -d postgres -c "CREATE USER postgres WITH SUPERUSER PASSWORD 'postgres';"
+   ```
 
 4. **Manually create databases** (if automatic creation fails):
+
    ```bash
-   psql -U your_username -d postgres -c "CREATE DATABASE api_starter_db;"
-   psql -U your_username -d postgres -c "CREATE DATABASE api_starter_db_test;"
+   psql -U postgres -d postgres -c "CREATE DATABASE api_starter_db;"
+   psql -U postgres -d postgres -c "CREATE DATABASE api_starter_db_test;"
    ```
+
+5. **Alternative: Use your own PostgreSQL user**:
+   - Update `DB_USER` and `DB_PASSWORD` in `.env`
+   - Create `.env.test` with the same credentials
+   - Update `vitest.config.ts` defaults to match your user
 
 ### Port Already in Use
 
