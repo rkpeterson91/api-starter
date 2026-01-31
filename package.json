@@ -20,7 +20,7 @@
     "docker:logs": "docker-compose logs -f api",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "prepare": "husky"
+    "prepare": "husky || true"
   },
   "keywords": [
     "fastify",
