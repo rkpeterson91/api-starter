@@ -1,5 +1,8 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { User } from '../models/index.js';
+import { getMessages, type Locale } from '../i18n/messages.js';
+import { sendError } from '../utils/errors.js';
+import { userSchema, usersArraySchema, errorSchema, idParamSchema } from '../schemas/common.js';
 
 interface CreateUserBody {
   name: string;
@@ -14,26 +17,6 @@ interface UpdateUserBody {
 interface UserParams {
   id: string;
 }
-
-// Reusable schemas
-const userSchema = {
-  type: 'object',
-  properties: {
-    id: { type: 'number' },
-    name: { type: 'string' },
-    email: { type: 'string', format: 'email' },
-    googleId: { type: ['string', 'null'] },
-    createdAt: { type: 'string', format: 'date-time' },
-    updatedAt: { type: 'string', format: 'date-time' },
-  },
-};
-
-const errorSchema = {
-  type: 'object',
-  properties: {
-    error: { type: 'string' },
-  },
-};
 
 export const userRoutes = async (fastify: FastifyInstance) => {
   // Add authentication to all user routes
@@ -62,13 +45,16 @@ export const userRoutes = async (fastify: FastifyInstance) => {
       },
     },
     async (request: FastifyRequest<{ Body: CreateUserBody }>, reply: FastifyReply) => {
+      const locale = (request as any).locale as Locale;
+      const messages = getMessages(locale);
+
       try {
         const { name, email } = request.body;
         const user = await User.create({ name, email });
         return reply.code(201).send(user);
       } catch (error) {
         request.log.error(error);
-        return reply.code(500).send({ error: 'Failed to create user' });
+        return sendError(reply, 500, messages.errors.failedToCreateUser);
       }
     }
   );
@@ -82,15 +68,15 @@ export const userRoutes = async (fastify: FastifyInstance) => {
         description: 'Get all users',
         security: [{ bearerAuth: [] }],
         response: {
-          200: {
-            type: 'array',
-            items: userSchema,
-          },
+          200: usersArraySchema,
           500: errorSchema,
         },
       },
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
+      const locale = (request as any).locale as Locale;
+      const messages = getMessages(locale);
+
       try {
         const users = await User.findAll({
           order: [['createdAt', 'DESC']],
@@ -98,7 +84,7 @@ export const userRoutes = async (fastify: FastifyInstance) => {
         return reply.send(users);
       } catch (error) {
         request.log.error(error);
-        return reply.code(500).send({ error: 'Failed to fetch users' });
+        return sendError(reply, 500, messages.errors.failedToFetchUsers);
       }
     }
   );
@@ -111,13 +97,7 @@ export const userRoutes = async (fastify: FastifyInstance) => {
         tags: ['Users'],
         description: 'Get a user by ID',
         security: [{ bearerAuth: [] }],
-        params: {
-          type: 'object',
-          properties: {
-            id: { type: 'string' },
-          },
-          required: ['id'],
-        },
+        params: idParamSchema,
         response: {
           200: userSchema,
           404: errorSchema,
@@ -126,18 +106,21 @@ export const userRoutes = async (fastify: FastifyInstance) => {
       },
     },
     async (request: FastifyRequest<{ Params: UserParams }>, reply: FastifyReply) => {
+      const locale = (request as any).locale as Locale;
+      const messages = getMessages(locale);
+
       try {
         const { id } = request.params;
         const user = await User.findByPk(id);
 
         if (!user) {
-          return reply.code(404).send({ error: 'User not found' });
+          return sendError(reply, 404, messages.errors.userNotFound);
         }
 
         return reply.send(user);
       } catch (error) {
         request.log.error(error);
-        return reply.code(500).send({ error: 'Failed to fetch user' });
+        return sendError(reply, 500, messages.errors.failedToFetchUser);
       }
     }
   );
@@ -150,13 +133,7 @@ export const userRoutes = async (fastify: FastifyInstance) => {
         tags: ['Users'],
         description: 'Update a user',
         security: [{ bearerAuth: [] }],
-        params: {
-          type: 'object',
-          properties: {
-            id: { type: 'string' },
-          },
-          required: ['id'],
-        },
+        params: idParamSchema,
         body: {
           type: 'object',
           properties: {
@@ -175,24 +152,32 @@ export const userRoutes = async (fastify: FastifyInstance) => {
       request: FastifyRequest<{ Params: UserParams; Body: UpdateUserBody }>,
       reply: FastifyReply
     ) => {
+      const locale = (request as any).locale as Locale;
+      const messages = getMessages(locale);
+
       try {
         const { id } = request.params;
         const { name, email } = request.body;
 
-        const user = await User.findByPk(id);
+        // Build update object with only defined fields
+        const updateFields: Partial<UpdateUserBody> = {};
+        if (name !== undefined) updateFields.name = name;
+        if (email !== undefined) updateFields.email = email;
 
-        if (!user) {
-          return reply.code(404).send({ error: 'User not found' });
+        // Optimized: single query update with returning the updated record
+        const [affectedCount, affectedRows] = await User.update(updateFields, {
+          where: { id },
+          returning: true,
+        });
+
+        if (affectedCount === 0) {
+          return sendError(reply, 404, messages.errors.userNotFound);
         }
 
-        if (name) user.name = name;
-        if (email) user.email = email;
-
-        await user.save();
-        return reply.send(user);
+        return reply.send(affectedRows[0]);
       } catch (error) {
         request.log.error(error);
-        return reply.code(500).send({ error: 'Failed to update user' });
+        return sendError(reply, 500, messages.errors.failedToUpdateUser);
       }
     }
   );
@@ -205,13 +190,7 @@ export const userRoutes = async (fastify: FastifyInstance) => {
         tags: ['Users'],
         description: 'Delete a user',
         security: [{ bearerAuth: [] }],
-        params: {
-          type: 'object',
-          properties: {
-            id: { type: 'string' },
-          },
-          required: ['id'],
-        },
+        params: idParamSchema,
         response: {
           204: {
             type: 'null',
@@ -223,19 +202,23 @@ export const userRoutes = async (fastify: FastifyInstance) => {
       },
     },
     async (request: FastifyRequest<{ Params: UserParams }>, reply: FastifyReply) => {
+      const locale = (request as any).locale as Locale;
+      const messages = getMessages(locale);
+
       try {
         const { id } = request.params;
-        const user = await User.findByPk(id);
+        const deletedCount = await User.destroy({
+          where: { id },
+        });
 
-        if (!user) {
-          return reply.code(404).send({ error: 'User not found' });
+        if (deletedCount === 0) {
+          return sendError(reply, 404, messages.errors.userNotFound);
         }
 
-        await user.destroy();
         return reply.code(204).send();
       } catch (error) {
         request.log.error(error);
-        return reply.code(500).send({ error: 'Failed to delete user' });
+        return sendError(reply, 500, messages.errors.failedToDeleteUser);
       }
     }
   );

@@ -378,8 +378,8 @@ describe('User CRUD Operations', () => {
     });
     const createdUser = JSON.parse(createResponse.body);
 
-    // Mock save to throw an error
-    vi.spyOn(User.prototype, 'save').mockRejectedValueOnce(new Error('Save operation failed'));
+    // Mock User.update to throw an error
+    vi.spyOn(User, 'update').mockRejectedValueOnce(new Error('Update operation failed'));
 
     const response = await server.inject({
       method: 'PUT',
@@ -414,8 +414,8 @@ describe('User CRUD Operations', () => {
     });
     const createdUser = JSON.parse(createResponse.body);
 
-    // Mock destroy to throw an error
-    vi.spyOn(User.prototype, 'destroy').mockRejectedValueOnce(new Error('Delete operation failed'));
+    // Mock User.destroy to throw an error
+    vi.spyOn(User, 'destroy').mockRejectedValueOnce(new Error('Delete operation failed'));
 
     const response = await server.inject({
       method: 'DELETE',

@@ -1,6 +1,7 @@
 import Fastify from 'fastify';
 import { config } from './config/index.js';
 import swagger from './plugins/swagger.js';
+import { getLocaleFromHeader } from './i18n/messages.js';
 
 // Check if pino-pretty is available (dev dependency)
 let hasPinoPretty = false;
@@ -42,18 +43,36 @@ export const buildServer = () => {
           : { level: 'error' }, // Production
   });
 
-  // Log request body after parsing in development
-  if (config.env === 'development') {
-    fastify.addHook('onRequest', async (request, reply) => {
-      request.log.info({ method: request.method, url: request.url }, 'Incoming request');
-    });
+  // Locale detection and consolidated development logging
+  fastify.addHook('onRequest', async (request, reply) => {
+    // Detect locale from Accept-Language header
+    const locale = getLocaleFromHeader(request.headers['accept-language']);
+    (request as any).locale = locale;
 
+    // Development logging
+    if (config.env === 'development') {
+      request.log.info(
+        {
+          method: request.method,
+          url: request.url,
+          locale,
+        },
+        'Incoming request'
+      );
+    }
+  });
+
+  // Log request body in development
+  if (config.env === 'development') {
     fastify.addHook('preHandler', async (request, reply) => {
       if (request.body) {
         request.log.info({ body: request.body }, 'Request body');
       }
     });
+  }
 
+  // Log response in development
+  if (config.env === 'development') {
     fastify.addHook('onResponse', async (request, reply) => {
       request.log.info(
         {

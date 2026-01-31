@@ -1,5 +1,8 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { User } from '../models/index.js';
+import { getMessages, type Locale } from '../i18n/messages.js';
+import { sendError } from '../utils/errors.js';
+import { userResponseSchema, errorSchema, tokenResponseSchema } from '../schemas/common.js';
 
 interface GoogleUserInfo {
   id: string;
@@ -10,25 +13,6 @@ interface GoogleUserInfo {
   family_name: string;
   picture: string;
 }
-
-// Reusable schemas
-const userResponseSchema = {
-  type: 'object',
-  properties: {
-    id: { type: 'number' },
-    name: { type: 'string' },
-    email: { type: 'string', format: 'email' },
-    createdAt: { type: 'string', format: 'date-time' },
-    updatedAt: { type: 'string', format: 'date-time' },
-  },
-};
-
-const errorSchema = {
-  type: 'object',
-  properties: {
-    error: { type: 'string' },
-  },
-};
 
 export const authRoutes = async (fastify: FastifyInstance) => {
   // OAuth callback handler
@@ -42,12 +26,12 @@ export const authRoutes = async (fastify: FastifyInstance) => {
       },
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
+      const locale = (request as any).locale as Locale;
+      const messages = getMessages(locale);
+
       try {
         if (!fastify.googleOAuth2) {
-          return reply.code(503).send({
-            error:
-              'Google OAuth not configured. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET',
-          });
+          return sendError(reply, 503, messages.errors.googleOAuthNotConfigured);
         }
 
         const { token } =
@@ -59,7 +43,7 @@ export const authRoutes = async (fastify: FastifyInstance) => {
         });
 
         if (!response.ok) {
-          throw new Error('Failed to fetch user info from Google');
+          return sendError(reply, 500, messages.errors.failedToFetchGoogleUserInfo);
         }
 
         const userInfo = (await response.json()) as GoogleUserInfo;
@@ -68,8 +52,8 @@ export const authRoutes = async (fastify: FastifyInstance) => {
         const expiresAt = new Date();
         expiresAt.setSeconds(expiresAt.getSeconds() + (token.expires_in || 3600));
 
-        // Create or find user in database
-        const [user] = await User.findOrCreate({
+        // Create or update user in database
+        const [user, created] = await User.findOrCreate({
           where: { email: userInfo.email },
           defaults: {
             name: userInfo.name,
@@ -81,13 +65,32 @@ export const authRoutes = async (fastify: FastifyInstance) => {
           },
         });
 
-        // Update Google tokens and ID for existing users
-        if (user.googleId !== userInfo.id || user.googleAccessToken !== token.access_token) {
-          user.googleId = userInfo.id;
-          user.googleAccessToken = token.access_token;
-          user.googleRefreshToken = token.refresh_token || user.googleRefreshToken;
-          user.googleTokenExpiresAt = expiresAt;
-          await user.save();
+        // Optimized: update existing users with single query if needed
+        if (!created) {
+          const updateFields: any = {};
+          let needsUpdate = false;
+
+          if (user.googleId !== userInfo.id) {
+            updateFields.googleId = userInfo.id;
+            needsUpdate = true;
+          }
+          if (user.googleAccessToken !== token.access_token) {
+            updateFields.googleAccessToken = token.access_token;
+            needsUpdate = true;
+          }
+          if (token.refresh_token && user.googleRefreshToken !== token.refresh_token) {
+            updateFields.googleRefreshToken = token.refresh_token;
+            needsUpdate = true;
+          }
+          if (user.googleTokenExpiresAt?.getTime() !== expiresAt.getTime()) {
+            updateFields.googleTokenExpiresAt = expiresAt;
+            needsUpdate = true;
+          }
+
+          if (needsUpdate) {
+            await User.update(updateFields, { where: { id: user.id } });
+            Object.assign(user, updateFields);
+          }
         }
 
         // Issue JWT token
@@ -121,7 +124,7 @@ export const authRoutes = async (fastify: FastifyInstance) => {
         });
       } catch (error) {
         request.log.error(error);
-        return reply.code(500).send({ error: 'Authentication failed' });
+        return sendError(reply, 500, messages.errors.authenticationFailed);
       }
     }
   );
@@ -148,19 +151,22 @@ export const authRoutes = async (fastify: FastifyInstance) => {
       },
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
+      const locale = (request as any).locale as Locale;
+      const messages = getMessages(locale);
+
       try {
         const user = await User.findByPk(request.user!.userId, {
           attributes: ['id', 'name', 'email', 'createdAt', 'updatedAt'],
         });
 
         if (!user) {
-          return reply.code(404).send({ error: 'User not found' });
+          return sendError(reply, 404, messages.errors.userNotFound);
         }
 
         return reply.send({ user });
       } catch (error) {
         request.log.error(error);
-        return reply.code(500).send({ error: 'Failed to fetch user' });
+        return sendError(reply, 500, messages.errors.failedToFetchUser);
       }
     }
   );
@@ -184,9 +190,12 @@ export const authRoutes = async (fastify: FastifyInstance) => {
       },
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
+      const locale = (request as any).locale as Locale;
+      const messages = getMessages(locale);
+
       return reply
         .clearCookie('refreshToken')
-        .send({ success: true, message: 'Logged out successfully' });
+        .send({ success: true, message: messages.success.loggedOutSuccessfully });
     }
   );
 
@@ -233,22 +242,18 @@ export const authRoutes = async (fastify: FastifyInstance) => {
             },
           },
           response: {
-            200: {
-              type: 'object',
-              properties: {
-                token: { type: 'string' },
-                user: userResponseSchema,
-              },
-            },
+            200: tokenResponseSchema,
             400: errorSchema,
           },
         },
       },
       async (request: FastifyRequest, reply: FastifyReply) => {
+        const locale = (request as any).locale as Locale;
+        const messages = getMessages(locale);
         const { email, name } = request.body as { email?: string; name?: string };
 
         if (!email) {
-          return reply.code(400).send({ error: 'email is required' });
+          return sendError(reply, 400, messages.errors.emailRequired);
         }
 
         // Find or create user

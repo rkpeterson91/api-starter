@@ -6,6 +6,12 @@ const dbConfig = {
   port: config.database.port,
   dialect: 'postgres' as const,
   logging: config.env === 'development' ? console.log : false,
+  pool: {
+    max: 10,
+    min: 2,
+    acquire: 30000,
+    idle: 10000,
+  },
 };
 
 export const sequelize = new Sequelize(
