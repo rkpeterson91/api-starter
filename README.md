@@ -1,6 +1,6 @@
 # API Starter
 
-A barebones Node.js backend API built with TypeScript, Fastify, PostgreSQL, Sequelize, and Vitest. Includes Google OAuth2 authentication.
+A barebones Node.js backend API built with TypeScript, Fastify, PostgreSQL, Sequelize, and Vitest. Includes Google OAuth2 authentication and interactive OpenAPI documentation.
 
 ## Prerequisites
 
@@ -47,6 +47,8 @@ pnpm dev
 ```
 
 That's it! The API will be running on `http://localhost:3000`
+
+**View API Documentation**: Open `http://localhost:3000/documentation` to see interactive API docs with all endpoints, schemas, and authentication details.
 
 **Alternative: Docker Setup**
 
@@ -188,6 +190,22 @@ DB_NAME=api_starter_db_test
 ```
 
 **Important**: Test credentials must match a PostgreSQL user with sufficient privileges to create and access the test database.
+
+## API Documentation
+
+Interactive API documentation is available at `/documentation` when the server is running.
+
+**Access it at:** `http://localhost:3000/documentation`
+
+The documentation includes:
+
+- **All endpoints** with descriptions and examples
+- **Request/response schemas** with validation rules
+- **Authentication** setup (JWT Bearer tokens)
+- **Try it out** functionality to test endpoints directly in the browser
+- **OpenAPI 3.0 spec** available at `/documentation/json`
+
+Powered by [@fastify/swagger](https://github.com/fastify/fastify-swagger) and [@fastify/swagger-ui](https://github.com/fastify/fastify-swagger-ui).
 
 ## API Endpoints
 
@@ -463,6 +481,11 @@ If Docker containers are in a restart loop:
 - **@fastify/oauth2** - Google OAuth2 authentication
 - **@fastify/jwt** - JWT token management
 - **@fastify/cookie** - Cookie-based session management
+- **@fastify/swagger** - OpenAPI documentation generation
+- **@fastify/swagger-ui** - Interactive API documentation interface
+- **Prettier** - Code formatting
+- **Husky** - Git hooks for pre-commit formatting
+- **Docker** - Containerization for consistent deployment
 
 ## Security Notes
 

@@ -1,7 +1,7 @@
 {
   "name": "api-starter",
   "version": "1.0.0",
-  "description": "Barebones Node.js API with TypeScript, Fastify, Postgres, and Sequelize",
+  "description": "Barebones Node.js API with TypeScript, Fastify, Postgres, Sequelize, and Swagger/OpenAPI documentation",
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
