@@ -284,9 +284,9 @@ describe('User CRUD Operations', () => {
       },
     });
 
-    expect(response.statusCode).toBe(500);
+    expect(response.statusCode).toBe(400); // Swagger schema validation returns 400
     const data = JSON.parse(response.body);
-    expect(data.error).toBeDefined();
+    expect(data.message || data.error).toBeDefined();
   });
 
   it('should handle invalid JSON body', async () => {

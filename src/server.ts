@@ -1,5 +1,6 @@
 import Fastify from 'fastify';
 import { config } from './config/index.js';
+import swagger from './plugins/swagger.js';
 
 // Check if pino-pretty is available (dev dependency)
 let hasPinoPretty = false;
@@ -84,8 +85,23 @@ export const buildServer = () => {
   });
 
   // Health check route
-  fastify.get('/health', async () => {
-    return { status: 'ok', timestamp: new Date().toISOString() };
+  fastify.get('/health', {
+    schema: {
+      tags: ['Health'],
+      description: 'Health check endpoint',
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            status: { type: 'string', example: 'ok' },
+            timestamp: { type: 'string', format: 'date-time' },
+          },
+        },
+      },
+    },
+    handler: async () => {
+      return { status: 'ok', timestamp: new Date().toISOString() };
+    },
   });
 
   return fastify;

@@ -5,6 +5,7 @@ import './models/index.js';
 import { userRoutes } from './routes/userRoutes.js';
 import { authRoutes } from './routes/authRoutes.js';
 import authPlugin from './plugins/auth.js';
+import swaggerPlugin from './plugins/swagger.js';
 
 const start = async () => {
   try {
@@ -13,6 +14,9 @@ const start = async () => {
 
     // Build Fastify server
     const server = buildServer();
+
+    // Register Swagger documentation (before routes)
+    await server.register(swaggerPlugin);
 
     // Register auth plugin
     await server.register(authPlugin);

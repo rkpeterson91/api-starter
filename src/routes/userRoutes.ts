@@ -15,6 +15,26 @@ interface UserParams {
   id: string;
 }
 
+// Reusable schemas
+const userSchema = {
+  type: 'object',
+  properties: {
+    id: { type: 'number' },
+    name: { type: 'string' },
+    email: { type: 'string', format: 'email' },
+    googleId: { type: ['string', 'null'] },
+    createdAt: { type: 'string', format: 'date-time' },
+    updatedAt: { type: 'string', format: 'date-time' },
+  },
+};
+
+const errorSchema = {
+  type: 'object',
+  properties: {
+    error: { type: 'string' },
+  },
+};
+
 export const userRoutes = async (fastify: FastifyInstance) => {
   // Add authentication to all user routes
   fastify.addHook('onRequest', fastify.authenticate);
@@ -22,6 +42,25 @@ export const userRoutes = async (fastify: FastifyInstance) => {
   // CREATE - Create a new user
   fastify.post<{ Body: CreateUserBody }>(
     '/',
+    {
+      schema: {
+        tags: ['Users'],
+        description: 'Create a new user',
+        security: [{ bearerAuth: [] }],
+        body: {
+          type: 'object',
+          required: ['name', 'email'],
+          properties: {
+            name: { type: 'string', minLength: 1 },
+            email: { type: 'string', format: 'email' },
+          },
+        },
+        response: {
+          201: userSchema,
+          500: errorSchema,
+        },
+      },
+    },
     async (request: FastifyRequest<{ Body: CreateUserBody }>, reply: FastifyReply) => {
       try {
         const { name, email } = request.body;
@@ -35,21 +74,57 @@ export const userRoutes = async (fastify: FastifyInstance) => {
   );
 
   // READ - Get all users
-  fastify.get('/', async (request: FastifyRequest, reply: FastifyReply) => {
-    try {
-      const users = await User.findAll({
-        order: [['createdAt', 'DESC']],
-      });
-      return reply.send(users);
-    } catch (error) {
-      request.log.error(error);
-      return reply.code(500).send({ error: 'Failed to fetch users' });
+  fastify.get(
+    '/',
+    {
+      schema: {
+        tags: ['Users'],
+        description: 'Get all users',
+        security: [{ bearerAuth: [] }],
+        response: {
+          200: {
+            type: 'array',
+            items: userSchema,
+          },
+          500: errorSchema,
+        },
+      },
+    },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const users = await User.findAll({
+          order: [['createdAt', 'DESC']],
+        });
+        return reply.send(users);
+      } catch (error) {
+        request.log.error(error);
+        return reply.code(500).send({ error: 'Failed to fetch users' });
+      }
     }
-  });
+  );
 
   // READ - Get a single user by ID
   fastify.get<{ Params: UserParams }>(
     '/:id',
+    {
+      schema: {
+        tags: ['Users'],
+        description: 'Get a user by ID',
+        security: [{ bearerAuth: [] }],
+        params: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+          },
+          required: ['id'],
+        },
+        response: {
+          200: userSchema,
+          404: errorSchema,
+          500: errorSchema,
+        },
+      },
+    },
     async (request: FastifyRequest<{ Params: UserParams }>, reply: FastifyReply) => {
       try {
         const { id } = request.params;
@@ -70,6 +145,32 @@ export const userRoutes = async (fastify: FastifyInstance) => {
   // UPDATE - Update a user
   fastify.put<{ Params: UserParams; Body: UpdateUserBody }>(
     '/:id',
+    {
+      schema: {
+        tags: ['Users'],
+        description: 'Update a user',
+        security: [{ bearerAuth: [] }],
+        params: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+          },
+          required: ['id'],
+        },
+        body: {
+          type: 'object',
+          properties: {
+            name: { type: 'string', minLength: 1 },
+            email: { type: 'string', format: 'email' },
+          },
+        },
+        response: {
+          200: userSchema,
+          404: errorSchema,
+          500: errorSchema,
+        },
+      },
+    },
     async (
       request: FastifyRequest<{ Params: UserParams; Body: UpdateUserBody }>,
       reply: FastifyReply
@@ -99,6 +200,28 @@ export const userRoutes = async (fastify: FastifyInstance) => {
   // DELETE - Delete a user
   fastify.delete<{ Params: UserParams }>(
     '/:id',
+    {
+      schema: {
+        tags: ['Users'],
+        description: 'Delete a user',
+        security: [{ bearerAuth: [] }],
+        params: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+          },
+          required: ['id'],
+        },
+        response: {
+          204: {
+            type: 'null',
+            description: 'User deleted successfully',
+          },
+          404: errorSchema,
+          500: errorSchema,
+        },
+      },
+    },
     async (request: FastifyRequest<{ Params: UserParams }>, reply: FastifyReply) => {
       try {
         const { id } = request.params;
