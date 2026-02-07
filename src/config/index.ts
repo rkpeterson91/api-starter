@@ -43,6 +43,14 @@ const getEnabledProviders = () => {
   return Object.values(providers).filter((p) => p.enabled);
 };
 
+// Get database name based on environment
+const getDatabaseName = () => {
+  const baseName = process.env.DB_NAME || 'api_starter_db';
+  const env = process.env.NODE_ENV || 'development';
+  // Append _test suffix in test environment (matching database.cjs behavior)
+  return env === 'test' ? `${baseName}_test` : baseName;
+};
+
 export const config = {
   env: process.env.NODE_ENV || 'development',
   port: parseInt(process.env.PORT || '3000', 10),
@@ -50,7 +58,7 @@ export const config = {
   database: {
     host: process.env.DB_HOST || 'localhost',
     port: parseInt(process.env.DB_PORT || '5432', 10),
-    name: process.env.DB_NAME || 'api_starter_db',
+    name: getDatabaseName(),
     user: process.env.DB_USER || 'postgres',
     password: process.env.DB_PASSWORD || 'postgres',
     ssl: process.env.DB_SSL === 'true',
