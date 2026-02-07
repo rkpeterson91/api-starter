@@ -11,8 +11,7 @@
 
 ✅ **GitHub Actions Workflows**
 
-- `.github/workflows/ci.yml` - Automated testing
-- `.github/workflows/docker.yml` - Docker image builds
+- `.github/workflows/ci.yml` - CI/CD pipeline (tests + Docker image builds)
 
 ✅ **Documentation**
 
@@ -63,8 +62,10 @@ git push origin main
 
 1. Go to **Actions** tab in your repository
 2. You should see workflows running:
-   - ✅ **CI** - Testing your code
-   - ✅ **Docker Build & Publish** - Building Docker image
+
+- ✅ **CI/CD** - Tests + Docker image build/publish
+
+**Coverage summary** is published to the workflow run summary, and the HTML report is attached as a `coverage-report` artifact.
 
 ### 5. Access Your Docker Images
 
@@ -163,8 +164,7 @@ gh run watch
 Add to your README.md:
 
 ```markdown
-[![CI](https://github.com/USERNAME/api-starter/actions/workflows/ci.yml/badge.svg)](https://github.com/USERNAME/api-starter/actions/workflows/ci.yml)
-[![Docker](https://github.com/USERNAME/api-starter/actions/workflows/docker.yml/badge.svg)](https://github.com/USERNAME/api-starter/actions/workflows/docker.yml)
+[![CI/CD](https://github.com/USERNAME/api-starter/actions/workflows/ci.yml/badge.svg)](https://github.com/USERNAME/api-starter/actions/workflows/ci.yml)
 ```
 
 ## 🐛 Troubleshooting

@@ -44,7 +44,7 @@ docker-compose down
 
 ### Step 1: Enable GitHub Actions
 
-Your workflows are already configured in `.github/workflows/`. They will run automatically when you push to GitHub.
+Your workflow is already configured in `.github/workflows/ci.yml`. It runs tests and builds/publishes Docker images on pushes to `main`.
 
 ### Step 2: Configure GitHub Container Registry (GHCR)
 
@@ -69,9 +69,11 @@ git push origin main
 ### Step 4: Monitor Workflows
 
 1. Go to the **Actions** tab in your GitHub repository
-2. You'll see two workflows:
-   - **CI** - Runs tests on every push/PR
-   - **Docker Build & Publish** - Builds and publishes Docker images
+2. You'll see one workflow: **CI/CD**
+   - **Test & Build** job runs tests and publishes a coverage summary
+   - **Build & Push Docker Image** job builds and publishes Docker images
+
+**Coverage summary** appears in the workflow run summary, and the full HTML report is attached as the `coverage-report` artifact.
 
 ### Step 5: Access Your Docker Images
 
@@ -130,7 +132,7 @@ This creates images tagged with:
 3. Add GitHub secrets:
    - `DOCKER_USERNAME` - your Docker Hub username
    - `DOCKER_TOKEN` - your access token
-4. Update `.github/workflows/docker.yml`:
+4. Update `.github/workflows/ci.yml`:
    ```yaml
    env:
      REGISTRY: docker.io

@@ -210,6 +210,7 @@ Features:
 
 - [DOCKER.md](DOCKER.md) - Docker & GitHub Actions CI/CD
 - [GITHUB_SETUP.md](GITHUB_SETUP.md) - GitHub container registry setup
+- [AWS_DEPLOYMENT.md](AWS_DEPLOYMENT.md) - AWS deployment with migrations
 
 ## 🤝 Contributing
 

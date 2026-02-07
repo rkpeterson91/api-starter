@@ -38,8 +38,7 @@ scripts/
 
 .github/
 └── workflows/
-    ├── ci.yml              # Automated testing
-    └── docker.yml          # Docker build and publish
+  └── ci.yml              # Test, build, and Docker publish pipeline
 ```
 
 ## 🛠️ Tech Stack Details
