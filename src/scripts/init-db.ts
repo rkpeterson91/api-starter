@@ -28,7 +28,15 @@ const createDatabase = (dbName: string) => {
 };
 
 const main = async () => {
-  console.log('Initializing databases...\n');
+  // Skip database creation in cloud environments (RDS, Cloud SQL, etc.)
+  if (config.isCloudEnvironment || config.env === 'production') {
+    console.log('Cloud environment detected. Skipping database creation.');
+    console.log('Ensure your database is provisioned through your cloud provider.');
+    console.log('Run migrations instead: pnpm migrate');
+    process.exit(0);
+  }
+
+  console.log('Initializing databases locally...\n');
 
   try {
     // Create development database
@@ -39,6 +47,8 @@ const main = async () => {
     createDatabase(testDbName);
 
     console.log('\n✓ All databases initialized successfully!');
+    console.log('\nNext steps:');
+    console.log('  - Run migrations: pnpm migrate');
   } catch (error) {
     console.error('\n✗ Database initialization failed');
     console.error('Please ensure PostgreSQL is running and your credentials are correct in .env');

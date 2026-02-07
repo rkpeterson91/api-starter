@@ -6,6 +6,14 @@ const dbConfig = {
   port: config.database.port,
   dialect: 'postgres' as const,
   logging: config.env === 'development' ? console.log : false,
+  ...(config.database.ssl && {
+    dialectOptions: {
+      ssl: {
+        require: true,
+        rejectUnauthorized: false, // For AWS RDS
+      },
+    },
+  }),
   pool: {
     max: 10,
     min: 2,
@@ -26,9 +34,16 @@ export const connectDatabase = async (): Promise<void> => {
     await sequelize.authenticate();
     console.log('Database connection established successfully.');
 
-    // Sync models with database (creates tables if they don't exist)
-    await sequelize.sync({ alter: config.env === 'development' });
-    console.log('Database models synchronized.');
+    // In production/cloud, only use migrations (no auto-sync)
+    // In development, use auto-sync for convenience
+    if (config.isCloudEnvironment || config.env === 'production') {
+      console.log('Production mode: Skipping auto-sync. Use migrations instead.');
+      console.log('Run: pnpm migrate');
+    } else {
+      // Development mode: auto-sync tables (creates if they don't exist)
+      await sequelize.sync({ alter: config.env === 'development' });
+      console.log('Database models synchronized.');
+    }
   } catch (error) {
     console.error('Unable to connect to the database:', error);
     throw error;
