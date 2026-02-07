@@ -62,9 +62,13 @@ describe('Authentication Routes', () => {
 
       expect(response.statusCode).toBe(200);
       const data = JSON.parse(response.body);
-      expect(data).toHaveProperty('googleOAuthConfigured');
-      expect(typeof data.googleOAuthConfigured).toBe('boolean');
-      expect(data).toHaveProperty('loginUrl');
+      expect(data).toHaveProperty('providers');
+      expect(Array.isArray(data.providers)).toBe(true);
+      // Should have at least one provider configured (Google)
+      expect(data.providers.length).toBeGreaterThan(0);
+      const googleProvider = data.providers.find((p: any) => p.name === 'google');
+      expect(googleProvider).toBeDefined();
+      expect(googleProvider).toHaveProperty('loginUrl');
     });
   });
 

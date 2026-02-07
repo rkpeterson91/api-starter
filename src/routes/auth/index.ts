@@ -4,131 +4,132 @@ import { getMessages, type Locale } from '../../i18n/messages.js';
 import { sendError } from '../../utils/errors.js';
 import { userResponseSchema, errorSchema, tokenResponseSchema } from '../../schemas/common.js';
 import { config } from '../../config/index.js';
-
-interface GoogleUserInfo {
-  id: string;
-  email: string;
-  verified_email: boolean;
-  name: string;
-  given_name: string;
-  family_name: string;
-  picture: string;
-}
+import { fetchProviderUserInfo } from '../../utils/oauthProviders.js';
+import type { ProviderName } from '../../types/oauth.js';
 
 export const authRoutes = async (fastify: FastifyInstance) => {
-  // OAuth callback handler
-  fastify.get(
-    '/auth/google/callback',
-    {
-      schema: {
-        tags: ['Authentication'],
-        description: 'Google OAuth callback handler (automatic redirect)',
-        hide: true, // Hide from docs since it's called by Google
-      },
-    },
-    async (request: FastifyRequest, reply: FastifyReply) => {
-      const locale = (request as any).locale as Locale;
-      const messages = getMessages(locale);
+  // Generic OAuth callback handler for all providers
+  const handleOAuthCallback = async (
+    provider: ProviderName,
+    request: FastifyRequest,
+    reply: FastifyReply
+  ) => {
+    const locale = (request as any).locale as Locale;
+    const messages = getMessages(locale);
 
-      try {
-        if (!fastify.googleOAuth2) {
-          return sendError(reply, 503, messages.errors.googleOAuthNotConfigured);
-        }
+    try {
+      const oauthInstance = fastify.oauth[provider];
 
-        const { token } =
-          await fastify.googleOAuth2.getAccessTokenFromAuthorizationCodeFlow(request);
-
-        // Fetch user info from Google
-        const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
-          headers: { Authorization: `Bearer ${token.access_token}` },
-        });
-
-        if (!response.ok) {
-          return sendError(reply, 500, messages.errors.failedToFetchGoogleUserInfo);
-        }
-
-        const userInfo = (await response.json()) as GoogleUserInfo;
-
-        // Calculate token expiration time
-        const expiresAt = new Date();
-        expiresAt.setSeconds(expiresAt.getSeconds() + (token.expires_in || 3600));
-
-        // Create or update user in database
-        const [user, created] = await User.findOrCreate({
-          where: { email: userInfo.email },
-          defaults: {
-            name: userInfo.name,
-            email: userInfo.email,
-            googleId: userInfo.id,
-            googleAccessToken: token.access_token,
-            googleRefreshToken: token.refresh_token,
-            googleTokenExpiresAt: expiresAt,
-          },
-        });
-
-        // Optimized: update existing users with single query if needed
-        if (!created) {
-          const updateFields: any = {};
-          let needsUpdate = false;
-
-          if (user.googleId !== userInfo.id) {
-            updateFields.googleId = userInfo.id;
-            needsUpdate = true;
-          }
-          if (user.googleAccessToken !== token.access_token) {
-            updateFields.googleAccessToken = token.access_token;
-            needsUpdate = true;
-          }
-          if (token.refresh_token && user.googleRefreshToken !== token.refresh_token) {
-            updateFields.googleRefreshToken = token.refresh_token;
-            needsUpdate = true;
-          }
-          if (user.googleTokenExpiresAt?.getTime() !== expiresAt.getTime()) {
-            updateFields.googleTokenExpiresAt = expiresAt;
-            needsUpdate = true;
-          }
-
-          if (needsUpdate) {
-            await User.update(updateFields, { where: { id: user.id } });
-            Object.assign(user, updateFields);
-          }
-        }
-
-        // Issue JWT token
-        const jwtToken = fastify.jwt.sign(
-          {
-            userId: user.id,
-            email: user.email,
-          },
-          {
-            expiresIn: '7d',
-          }
-        );
-
-        // Set refresh token in cookie
-        reply.setCookie('refreshToken', jwtToken, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
-          path: '/',
-          maxAge: 7 * 24 * 60 * 60, // 7 days
-        });
-
-        return reply.send({
-          success: true,
-          token: jwtToken,
-          user: {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-          },
-        });
-      } catch (error) {
-        request.log.error(error);
-        return sendError(reply, 500, messages.errors.authenticationFailed);
+      if (!oauthInstance) {
+        return sendError(reply, 503, `${provider} OAuth is not configured`);
       }
+
+      const { token } = await oauthInstance.getAccessTokenFromAuthorizationCodeFlow(request);
+
+      // Fetch user info using provider-specific adapter
+      const userInfo = await fetchProviderUserInfo(provider, token.access_token);
+
+      // Calculate token expiration time
+      const expiresAt = new Date();
+      expiresAt.setSeconds(expiresAt.getSeconds() + (token.expires_in || 3600));
+
+      // Create or update user in database
+      const [user, created] = await User.findOrCreate({
+        where: { email: userInfo.email },
+        defaults: {
+          name: userInfo.name,
+          email: userInfo.email,
+          oauthProvider: provider,
+          oauthId: userInfo.id,
+          oauthAccessToken: token.access_token,
+          oauthRefreshToken: token.refresh_token,
+          oauthTokenExpiresAt: expiresAt,
+        },
+      });
+
+      // Update existing users with new OAuth data
+      if (!created) {
+        const updateFields: any = {};
+        let needsUpdate = false;
+
+        if (user.oauthProvider !== provider) {
+          updateFields.oauthProvider = provider;
+          needsUpdate = true;
+        }
+        if (user.oauthId !== userInfo.id) {
+          updateFields.oauthId = userInfo.id;
+          needsUpdate = true;
+        }
+        if (user.oauthAccessToken !== token.access_token) {
+          updateFields.oauthAccessToken = token.access_token;
+          needsUpdate = true;
+        }
+        if (token.refresh_token && user.oauthRefreshToken !== token.refresh_token) {
+          updateFields.oauthRefreshToken = token.refresh_token;
+          needsUpdate = true;
+        }
+        if (user.oauthTokenExpiresAt?.getTime() !== expiresAt.getTime()) {
+          updateFields.oauthTokenExpiresAt = expiresAt;
+          needsUpdate = true;
+        }
+
+        if (needsUpdate) {
+          await User.update(updateFields, { where: { id: user.id } });
+          Object.assign(user, updateFields);
+        }
+      }
+
+      // Issue JWT token
+      const jwtToken = fastify.jwt.sign(
+        {
+          userId: user.id,
+          email: user.email,
+        },
+        {
+          expiresIn: '7d',
+        }
+      );
+
+      // Set refresh token in cookie
+      reply.setCookie('refreshToken', jwtToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 7 * 24 * 60 * 60, // 7 days
+      });
+
+      return reply.send({
+        success: true,
+        token: jwtToken,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+        },
+      });
+    } catch (error) {
+      request.log.error(error);
+      return sendError(reply, 500, messages.errors.authenticationFailed);
     }
-  );
+  };
+
+  // Register OAuth callback routes for each enabled provider
+  for (const provider of config.oauth.enabledProviders) {
+    fastify.get(
+      `/auth/${provider.name}/callback`,
+      {
+        schema: {
+          tags: ['Authentication'],
+          description: `${provider.displayName} OAuth callback handler (automatic redirect)`,
+          hide: true, // Hide from docs since it's called by OAuth provider
+        },
+      },
+      async (request: FastifyRequest, reply: FastifyReply) => {
+        return handleOAuthCallback(provider.name as ProviderName, request, reply);
+      }
+    );
+  }
 
   // Get current user
   fastify.get(
@@ -212,18 +213,30 @@ export const authRoutes = async (fastify: FastifyInstance) => {
           200: {
             type: 'object',
             properties: {
-              googleOAuthConfigured: { type: 'boolean' },
-              loginUrl: { type: ['string', 'null'] },
+              providers: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    name: { type: 'string' },
+                    displayName: { type: 'string' },
+                    loginUrl: { type: 'string' },
+                  },
+                },
+              },
             },
           },
         },
       },
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
-      return reply.send({
-        googleOAuthConfigured: !!fastify.googleOAuth2,
-        loginUrl: fastify.googleOAuth2 ? '/auth/google' : null,
-      });
+      const providers = config.oauth.enabledProviders.map((p) => ({
+        name: p.name,
+        displayName: p.displayName,
+        loginUrl: `/auth/${p.name}`,
+      }));
+
+      return reply.send({ providers });
     }
   );
 

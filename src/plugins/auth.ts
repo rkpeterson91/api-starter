@@ -8,7 +8,7 @@ import { config } from '../config/index.js';
 declare module 'fastify' {
   interface FastifyInstance {
     authenticate: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
-    googleOAuth2: any;
+    oauth: Record<string, any>;
   }
 }
 
@@ -20,6 +20,13 @@ declare module '@fastify/jwt' {
     };
   }
 }
+
+// OAuth provider configurations
+const oauthConfigurations = {
+  google: fastifyOAuth2.GOOGLE_CONFIGURATION,
+  github: fastifyOAuth2.GITHUB_CONFIGURATION,
+  microsoft: fastifyOAuth2.MICROSOFT_CONFIGURATION,
+};
 
 export default fp(async (fastify: FastifyInstance) => {
   // Register cookie support
@@ -34,21 +41,36 @@ export default fp(async (fastify: FastifyInstance) => {
     },
   });
 
-  // Register Google OAuth only if credentials are provided
-  if (config.oauth.google.enabled) {
-    await fastify.register(fastifyOAuth2, {
-      name: 'googleOAuth2',
-      credentials: {
-        client: {
-          id: config.oauth.google.clientId!,
-          secret: config.oauth.google.clientSecret!,
+  // Initialize oauth object to store provider instances
+  fastify.decorate('oauth', {});
+
+  // Register OAuth providers dynamically
+  for (const provider of config.oauth.enabledProviders) {
+    const oauthConfig = oauthConfigurations[provider.name as keyof typeof oauthConfigurations];
+
+    if (oauthConfig) {
+      await fastify.register(fastifyOAuth2, {
+        name: `${provider.name}OAuth2`,
+        credentials: {
+          client: {
+            id: provider.clientId,
+            secret: provider.clientSecret,
+          },
+          auth: oauthConfig,
         },
-        auth: fastifyOAuth2.GOOGLE_CONFIGURATION,
-      },
-      startRedirectPath: '/auth/google',
-      callbackUri: `${config.appUrl}/auth/google/callback`,
-      scope: ['profile', 'email'],
-    });
+        startRedirectPath: `/auth/${provider.name}`,
+        callbackUri: `${config.appUrl}/auth/${provider.name}/callback`,
+        scope:
+          provider.name === 'google'
+            ? ['profile', 'email']
+            : provider.name === 'github'
+              ? ['user:email', 'read:user']
+              : ['openid', 'profile', 'email'],
+      });
+
+      // Store reference to OAuth instance
+      fastify.oauth[provider.name] = (fastify as any)[`${provider.name}OAuth2`];
+    }
   }
 
   // Auth decorator for protected routes

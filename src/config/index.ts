@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import type { OAuthProvider } from '../types/oauth.js';
 
 // Detect if running in a cloud environment
 const isCloudEnvironment = () => {
@@ -10,6 +11,36 @@ const isCloudEnvironment = () => {
     process.env.GOOGLE_CLOUD_PROJECT ||
     process.env.AZURE_FUNCTIONS_ENVIRONMENT
   );
+};
+
+// Configure OAuth providers
+const providers: Record<string, OAuthProvider> = {
+  google: {
+    name: 'google',
+    displayName: 'Google',
+    clientId: process.env.GOOGLE_CLIENT_ID || '',
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+    enabled: !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
+  },
+  github: {
+    name: 'github',
+    displayName: 'GitHub',
+    clientId: process.env.GITHUB_CLIENT_ID || '',
+    clientSecret: process.env.GITHUB_CLIENT_SECRET || '',
+    enabled: !!(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET),
+  },
+  microsoft: {
+    name: 'microsoft',
+    displayName: 'Microsoft',
+    clientId: process.env.MICROSOFT_CLIENT_ID || '',
+    clientSecret: process.env.MICROSOFT_CLIENT_SECRET || '',
+    enabled: !!(process.env.MICROSOFT_CLIENT_ID && process.env.MICROSOFT_CLIENT_SECRET),
+  },
+};
+
+// Get list of enabled providers
+const getEnabledProviders = () => {
+  return Object.values(providers).filter((p) => p.enabled);
 };
 
 export const config = {
@@ -28,11 +59,10 @@ export const config = {
     secret: process.env.JWT_SECRET || 'change-this-secret-in-production',
   },
   oauth: {
-    google: {
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      enabled: !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
-    },
+    providers,
+    enabledProviders: getEnabledProviders(),
+    // Keep legacy google config for backward compatibility
+    google: providers.google,
   },
   appUrl: process.env.APP_URL || 'http://localhost:3000',
 };
