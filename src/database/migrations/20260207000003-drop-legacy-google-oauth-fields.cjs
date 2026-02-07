@@ -5,7 +5,7 @@ module.exports = {
   async up(queryInterface, Sequelize) {
     // Drop legacy Google-specific OAuth columns if they exist
     const tableDescription = await queryInterface.describeTable('users');
-    
+
     if (tableDescription.google_id) {
       await queryInterface.removeColumn('users', 'google_id');
     }

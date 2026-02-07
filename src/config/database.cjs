@@ -29,10 +29,13 @@ module.exports = {
     dialect: 'postgres',
     logging: false,
     dialectOptions: {
-      ssl: process.env.DB_SSL === 'true' ? {
-        require: true,
-        rejectUnauthorized: false // For AWS RDS
-      } : false
+      ssl:
+        process.env.DB_SSL === 'true'
+          ? {
+              require: true,
+              rejectUnauthorized: false, // For AWS RDS
+            }
+          : false,
     },
     pool: {
       max: 10,

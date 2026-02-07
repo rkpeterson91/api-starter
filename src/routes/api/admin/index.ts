@@ -65,7 +65,7 @@ export const adminRoutes: FastifyPluginAsync = async (fastify) => {
 
       const user = await User.findByPk(id);
       if (!user) {
-        return reply.notFound('User not found');
+        return reply.code(404).send({ error: 'User not found', statusCode: 404 });
       }
 
       user.role = role;
@@ -98,6 +98,7 @@ export const adminRoutes: FastifyPluginAsync = async (fastify) => {
               message: { type: 'string' },
             },
           },
+          400: errorSchema,
           401: errorSchema,
           403: errorSchema,
           404: errorSchema,
@@ -109,12 +110,12 @@ export const adminRoutes: FastifyPluginAsync = async (fastify) => {
 
       // Prevent self-deletion
       if (request.user.id === id) {
-        return reply.badRequest('Cannot delete your own account');
+        return reply.code(400).send({ error: 'Cannot delete your own account', statusCode: 400 });
       }
 
       const user = await User.findByPk(id);
       if (!user) {
-        return reply.notFound('User not found');
+        return reply.code(404).send({ error: 'User not found', statusCode: 404 });
       }
 
       await user.destroy();
