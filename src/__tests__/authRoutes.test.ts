@@ -14,11 +14,8 @@ describe('Authentication Routes', () => {
   beforeAll(async () => {
     await sequelize.authenticate();
 
-    // Only sync if tables don't exist
-    const tables = await sequelize.getQueryInterface().showAllTables();
-    if (tables.length === 0) {
-      await sequelize.sync();
-    }
+    // Tables are already created by global setup via migrations
+    // No need to drop/recreate here - just clean up test data
 
     await server.register(authPlugin);
     await server.register(authRoutes);

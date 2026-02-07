@@ -5,16 +5,14 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: ['src/**/*.test.ts'],
+    // Global setup runs once before all tests to initialize DB with migrations
+    globalSetup: './vitest.setup.ts',
     // Run tests sequentially to avoid database conflicts
     pool: 'forks',
-    poolOptions: {
-      forks: {
-        singleFork: true,
-      },
-    },
+    singleFork: true,
     env: {
       NODE_ENV: 'test',
-      DB_NAME: process.env.DB_NAME || 'api_starter_db_test',
+      DB_NAME: process.env.DB_NAME || 'api_starter_db',
       DB_USER: process.env.DB_USER || 'postgres',
       DB_PASSWORD: process.env.DB_PASSWORD || 'postgres',
       DB_HOST: process.env.DB_HOST || 'localhost',
