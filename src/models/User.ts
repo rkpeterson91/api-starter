@@ -93,18 +93,32 @@ User.init(
       type: DataTypes.STRING(255),
       allowNull: true,
       unique: true,
+      field: 'google_id',
     },
     googleAccessToken: {
       type: DataTypes.TEXT,
       allowNull: true,
+      field: 'google_access_token',
     },
     googleRefreshToken: {
       type: DataTypes.TEXT,
       allowNull: true,
+      field: 'google_refresh_token',
     },
     googleTokenExpiresAt: {
       type: DataTypes.DATE,
       allowNull: true,
+      field: 'google_token_expires_at',
+    },
+    createdAt: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      field: 'created_at',
+    },
+    updatedAt: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      field: 'updated_at',
     },
   },
   {
