@@ -140,12 +140,7 @@ export const authRoutes = async (fastify: FastifyInstance) => {
         description: 'Get current authenticated user',
         security: [{ bearerAuth: [] }],
         response: {
-          200: {
-            type: 'object',
-            properties: {
-              user: userResponseSchema,
-            },
-          },
+          200: userResponseSchema,
           404: errorSchema,
           500: errorSchema,
         },
@@ -156,15 +151,21 @@ export const authRoutes = async (fastify: FastifyInstance) => {
       const messages = getMessages(locale);
 
       try {
-        const user = await User.findByPk(request.user!.userId, {
-          attributes: ['id', 'name', 'email', 'createdAt', 'updatedAt'],
-        });
+        const user = await User.findByPk(request.user!.userId);
 
         if (!user) {
           return sendError(reply, 404, messages.errors.userNotFound);
         }
 
-        return reply.send({ user });
+        const userData = {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
+        };
+
+        return reply.send({ user: userData });
       } catch (error) {
         request.log.error(error);
         return sendError(reply, 500, messages.errors.failedToFetchUser);
