@@ -5,6 +5,13 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: ['src/**/*.test.ts'],
+    // Run tests sequentially to avoid database conflicts
+    pool: 'forks',
+    poolOptions: {
+      forks: {
+        singleFork: true,
+      },
+    },
     env: {
       NODE_ENV: 'test',
       DB_NAME: process.env.DB_NAME || 'api_starter_db_test',

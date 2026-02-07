@@ -24,6 +24,15 @@ describe('Authentication Routes', () => {
     await server.register(authRoutes);
     await server.ready();
 
+    // Clean up any existing auth test users before starting
+    await User.destroy({
+      where: {
+        email: {
+          [Op.like]: '%@auth.test',
+        },
+      },
+    });
+
     // Create a test user and token with unique email pattern for auth tests
     const testUser = await User.create({
       name: 'Auth Test User',
