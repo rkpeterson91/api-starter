@@ -3,15 +3,26 @@
 import { execSync } from 'child_process';
 import { config } from '../config/index.js';
 
-const createDatabase = (dbName: string) => {
-  try {
-    // Check if database exists
-    const checkCmd = `psql -U ${config.database.user} -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='${dbName}'"`;
-    const exists = execSync(checkCmd, { encoding: 'utf-8' }).trim();
+const freshMode = process.argv.includes('--fresh');
 
-    if (exists === '1') {
-      console.log(`✓ Database '${dbName}' already exists`);
-      return;
+const createDatabase = (dbName: string, dropFirst: boolean = false) => {
+  try {
+    if (dropFirst) {
+      // Drop database if it exists
+      console.log(`Dropping database '${dbName}' if it exists...`);
+      const dropCmd = `psql -U ${config.database.user} -d postgres -c "DROP DATABASE IF EXISTS ${dbName};"`;
+      execSync(dropCmd, { stdio: 'inherit' });
+      console.log(`Creating database '${dbName}'...`);
+    } else {
+      // Check if database exists
+      const checkCmd = `psql -U ${config.database.user} -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='${dbName}'"`;
+      const exists = execSync(checkCmd, { encoding: 'utf-8' }).trim();
+
+      if (exists === '1') {
+        console.log(`✓ Database '${dbName}' already exists`);
+        return;
+      }
+      console.log(`Creating database '${dbName}'...`);
     }
 
     // Create database
@@ -36,15 +47,17 @@ const main = async () => {
     process.exit(0);
   }
 
-  console.log('Initializing databases locally...\n');
+  console.log(
+    `Initializing databases locally${freshMode ? ' (fresh mode - dropping existing)' : ''}...\n`
+  );
 
   try {
     // Create development database
-    createDatabase(config.database.name);
+    createDatabase(config.database.name, freshMode);
 
     // Create test database
     const testDbName = config.database.name + '_test';
-    createDatabase(testDbName);
+    createDatabase(testDbName, freshMode);
 
     console.log('\n✓ All databases initialized successfully!');
     console.log('\nNext steps:');

@@ -12,6 +12,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "db:init": "tsx src/scripts/init-db.ts",
+    "db:init-fresh": "tsx src/scripts/init-db.ts --fresh",
     "migrate": "sequelize-cli db:migrate",
     "migrate:undo": "sequelize-cli db:migrate:undo",
     "migrate:status": "sequelize-cli db:migrate:status",
