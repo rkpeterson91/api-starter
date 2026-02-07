@@ -73,7 +73,7 @@ jobs:
           DB_PORT: 5432
           DB_USER: postgres
           DB_PASSWORD: postgres
-          DB_NAME: api_starter_db_test
+          DB_NAME: api_starter_db
           JWT_SECRET: test-jwt-secret-for-ci
           APP_URL: http://localhost:3000
 

@@ -12,7 +12,7 @@ export default defineConfig({
     singleFork: true,
     env: {
       NODE_ENV: 'test',
-      DB_NAME: process.env.DB_NAME || 'api_starter_db_test',
+      DB_NAME: process.env.DB_NAME || 'api_starter_db',
       DB_USER: process.env.DB_USER || 'postgres',
       DB_PASSWORD: process.env.DB_PASSWORD || 'postgres',
       DB_HOST: process.env.DB_HOST || 'localhost',
