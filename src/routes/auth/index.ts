@@ -201,13 +201,13 @@ export const authRoutes = async (fastify: FastifyInstance) => {
     }
   );
 
-  // Health check for auth system
+  // Get available authentication providers
   fastify.get(
-    '/auth/status',
+    '/auth/providers',
     {
       schema: {
         tags: ['Authentication'],
-        description: 'Check if Google OAuth is configured',
+        description: 'Get available authentication providers configured on the API',
         response: {
           200: {
             type: 'object',

@@ -39,8 +39,17 @@ describe('User CRUD Operations', () => {
   });
 
   beforeEach(async () => {
-    // Clean up database before each test (except the test user)
-    await User.destroy({ where: { email: { [Op.ne]: 'test@example.com' } } });
+    // Clean up database before each test (except the test user and auth test users)
+    await User.destroy({
+      where: {
+        email: {
+          [Op.and]: [
+            { [Op.ne]: 'test@example.com' },
+            { [Op.notLike]: '%@auth.test' }, // Preserve auth test users
+          ],
+        },
+      },
+    });
   });
 
   afterAll(async () => {
