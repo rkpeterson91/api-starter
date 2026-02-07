@@ -12,6 +12,7 @@ import {
 interface CreateUserBody {
   name: string;
   email: string;
+  role?: 'user' | 'admin';
 }
 
 interface UpdateUserBody {
@@ -41,10 +42,12 @@ export const userRoutes = async (fastify: FastifyInstance) => {
           properties: {
             name: { type: 'string', minLength: 1 },
             email: { type: 'string', format: 'email' },
+            role: { type: 'string', enum: ['user', 'admin'] },
           },
         },
         response: {
           201: userSchema,
+          403: errorSchema,
           500: errorSchema,
         },
       },
@@ -54,8 +57,17 @@ export const userRoutes = async (fastify: FastifyInstance) => {
       const messages = getMessages(locale);
 
       try {
-        const { name, email } = request.body;
-        const user = await User.create({ name, email });
+        const { name, email, role } = request.body;
+
+        // Only admins can create admin users
+        if (role === 'admin' && request.user.role !== 'admin') {
+          return sendError(reply, 403, 'Insufficient permissions to create admin users');
+        }
+
+        // Default to 'user' role if not specified or if requester is not admin
+        const userRole = role && request.user.role === 'admin' ? role : 'user';
+
+        const user = await User.create({ name, email, role: userRole });
         return reply.code(201).send(user);
       } catch (error) {
         request.log.error(error);
@@ -136,7 +148,7 @@ export const userRoutes = async (fastify: FastifyInstance) => {
     {
       schema: {
         tags: ['Users'],
-        description: 'Update a user',
+        description: 'Update a user (self or admin only)',
         security: [{ bearerAuth: [] }],
         params: idParamSchema,
         body: {
@@ -148,6 +160,7 @@ export const userRoutes = async (fastify: FastifyInstance) => {
         },
         response: {
           200: userSchema,
+          403: errorSchema,
           404: errorSchema,
           500: errorSchema,
         },
@@ -162,6 +175,12 @@ export const userRoutes = async (fastify: FastifyInstance) => {
 
       try {
         const { id } = request.params;
+
+        // Users can only update themselves, unless they're an admin
+        if (request.user.id !== Number(id) && request.user.role !== 'admin') {
+          return sendError(reply, 403, 'Insufficient permissions to update this user');
+        }
+
         const { name, email } = request.body;
 
         // Build update object with only defined fields
@@ -193,7 +212,7 @@ export const userRoutes = async (fastify: FastifyInstance) => {
     {
       schema: {
         tags: ['Users'],
-        description: 'Delete a user',
+        description: 'Delete a user (self or admin only)',
         security: [{ bearerAuth: [] }],
         params: idParamSchema,
         response: {
@@ -201,6 +220,7 @@ export const userRoutes = async (fastify: FastifyInstance) => {
             type: 'null',
             description: 'User deleted successfully',
           },
+          403: errorSchema,
           404: errorSchema,
           500: errorSchema,
         },
@@ -212,6 +232,12 @@ export const userRoutes = async (fastify: FastifyInstance) => {
 
       try {
         const { id } = request.params;
+
+        // Users can only delete themselves, unless they're an admin
+        if (request.user.id !== Number(id) && request.user.role !== 'admin') {
+          return sendError(reply, 403, 'Insufficient permissions to delete this user');
+        }
+
         const deletedCount = await User.destroy({
           where: { id },
         });

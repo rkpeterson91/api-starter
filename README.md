@@ -128,11 +128,26 @@ Built-in user role system with two roles:
 - **user** - Default role for regular users
 - **admin** - Administrative access to manage users
 
-Admin endpoints:
+### Security Controls
+
+**Admin User Creation:**
+
+- Only admins can create users with the 'admin' role
+- Regular users creating accounts will default to 'user' role, even if they specify 'admin'
+
+**User Data Protection:**
+
+- Users can only update their own account information
+- Users can only delete their own account
+- Admins can update and delete any user
+
+### Admin Endpoints
 
 - `GET /api/admin/users` - List all users
 - `PATCH /api/admin/users/:id/role` - Update user role
 - `DELETE /api/admin/users/:id` - Delete user
+
+### Usage
 
 Easily protect routes by role:
 
@@ -146,7 +161,7 @@ fastify.get(
 );
 ```
 
-See [API_GUIDE.md](API_GUIDE.md) for detailed usage.
+See [API_GUIDE.md](API_GUIDE.md) for detailed usage examples.
 
 ## 🌍 Internationalization
 

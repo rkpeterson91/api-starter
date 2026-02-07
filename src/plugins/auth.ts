@@ -16,7 +16,9 @@ declare module '@fastify/jwt' {
   interface FastifyJWT {
     user: {
       userId: number;
+      id: number;
       email: string;
+      role: 'user' | 'admin';
     };
   }
 }
@@ -79,7 +81,9 @@ export default fp(async (fastify: FastifyInstance) => {
       const decoded = (await request.jwtVerify()) as any;
       request.user = {
         userId: decoded.userId,
+        id: decoded.userId, // Alias for consistency
         email: decoded.email,
+        role: decoded.role || 'user',
       };
     } catch (err) {
       reply.code(401).send({ error: 'Unauthorized' });

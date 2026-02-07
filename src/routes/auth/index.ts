@@ -84,6 +84,7 @@ export const authRoutes = async (fastify: FastifyInstance) => {
         {
           userId: user.id,
           email: user.email,
+          role: user.role,
         },
         {
           expiresIn: '7d',
@@ -285,6 +286,7 @@ export const authRoutes = async (fastify: FastifyInstance) => {
           {
             userId: user.id,
             email: user.email,
+            role: user.role,
           },
           {
             expiresIn: '7d',

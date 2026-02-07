@@ -9,6 +9,7 @@ import authPlugin from '../plugins/auth.js';
 describe('User CRUD Operations', () => {
   const server = buildServer();
   let authToken: string;
+  let testUserId: number;
 
   beforeAll(async () => {
     // Connect to test database
@@ -26,11 +27,15 @@ describe('User CRUD Operations', () => {
     const testUser = await User.create({
       name: 'Test User',
       email: 'test@example.com',
+      role: 'user',
     });
+
+    testUserId = testUser.id;
 
     authToken = server.jwt.sign({
       userId: testUser.id,
       email: testUser.email,
+      role: testUser.role,
     });
   });
 
@@ -132,59 +137,44 @@ describe('User CRUD Operations', () => {
   });
 
   it('should update a user', async () => {
-    // First create a user
-    const createResponse = await server.inject({
-      method: 'POST',
-      url: '/api/users',
-      headers: {
-        Authorization: `Bearer ${authToken}`,
-      },
-      payload: {
-        name: 'Bob Smith',
-        email: 'bob@example.com',
-      },
-    });
-    const createdUser = JSON.parse(createResponse.body);
-
-    // Then update the user
+    // User can update their own account
     const response = await server.inject({
       method: 'PUT',
-      url: `/api/users/${createdUser.id}`,
+      url: `/api/users/${testUserId}`,
       headers: {
         Authorization: `Bearer ${authToken}`,
       },
       payload: {
-        name: 'Robert Smith',
+        name: 'Updated Test User',
       },
     });
 
     expect(response.statusCode).toBe(200);
     const data = JSON.parse(response.body);
-    expect(data.name).toBe('Robert Smith');
-    expect(data.email).toBe('bob@example.com');
+    expect(data.name).toBe('Updated Test User');
+    expect(data.email).toBe('test@example.com');
   });
 
   it('should delete a user', async () => {
-    // First create a user
-    const createResponse = await server.inject({
-      method: 'POST',
-      url: '/api/users',
-      headers: {
-        Authorization: `Bearer ${authToken}`,
-      },
-      payload: {
-        name: 'Alice Johnson',
-        email: 'alice@example.com',
-      },
+    // Create a new user to delete (users can only delete themselves)
+    const newUser = await User.create({
+      name: 'To Delete',
+      email: 'todelete@example.com',
+      role: 'user',
     });
-    const createdUser = JSON.parse(createResponse.body);
 
-    // Then delete the user
+    const deleteToken = server.jwt.sign({
+      userId: newUser.id,
+      email: newUser.email,
+      role: newUser.role,
+    });
+
+    // Delete their own account
     const deleteResponse = await server.inject({
       method: 'DELETE',
-      url: `/api/users/${createdUser.id}`,
+      url: `/api/users/${newUser.id}`,
       headers: {
-        Authorization: `Bearer ${authToken}`,
+        Authorization: `Bearer ${deleteToken}`,
       },
     });
 
@@ -193,7 +183,7 @@ describe('User CRUD Operations', () => {
     // Verify user is deleted
     const getResponse = await server.inject({
       method: 'GET',
-      url: `/api/users/${createdUser.id}`,
+      url: `/api/users/${newUser.id}`,
       headers: {
         Authorization: `Bearer ${authToken}`,
       },
@@ -214,6 +204,8 @@ describe('User CRUD Operations', () => {
   });
 
   it('should return 404 when updating non-existent user', async () => {
+    // Trying to update a non-existent user that happens to not be the current user
+    // Should fail with 403 since user can only update themselves
     const response = await server.inject({
       method: 'PUT',
       url: '/api/users/99999',
@@ -225,12 +217,14 @@ describe('User CRUD Operations', () => {
       },
     });
 
-    expect(response.statusCode).toBe(404);
+    expect(response.statusCode).toBe(403);
     const data = JSON.parse(response.body);
-    expect(data.error).toBe('User not found');
+    expect(data.error).toBe('Insufficient permissions to update this user');
   });
 
   it('should return 404 when deleting non-existent user', async () => {
+    // Trying to delete a non-existent user that is not the current user
+    // Should fail with 403 since user can only delete themselves
     const response = await server.inject({
       method: 'DELETE',
       url: '/api/users/99999',
@@ -239,9 +233,9 @@ describe('User CRUD Operations', () => {
       },
     });
 
-    expect(response.statusCode).toBe(404);
+    expect(response.statusCode).toBe(403);
     const data = JSON.parse(response.body);
-    expect(data.error).toBe('User not found');
+    expect(data.error).toBe('Insufficient permissions to delete this user');
   });
 
   it('should handle duplicate email errors', async () => {
@@ -370,26 +364,13 @@ describe('User CRUD Operations', () => {
   });
 
   it('should handle database error when updating user', async () => {
-    // First create a real user
-    const createResponse = await server.inject({
-      method: 'POST',
-      url: '/api/users',
-      headers: {
-        Authorization: `Bearer ${authToken}`,
-      },
-      payload: {
-        name: 'Test User',
-        email: 'test-update-error@example.com',
-      },
-    });
-    const createdUser = JSON.parse(createResponse.body);
-
     // Mock User.update to throw an error
     vi.spyOn(User, 'update').mockRejectedValueOnce(new Error('Update operation failed'));
 
+    // Try to update own user
     const response = await server.inject({
       method: 'PUT',
-      url: `/api/users/${createdUser.id}`,
+      url: `/api/users/${testUserId}`,
       headers: {
         Authorization: `Bearer ${authToken}`,
       },
@@ -406,26 +387,13 @@ describe('User CRUD Operations', () => {
   });
 
   it('should handle database error when deleting user', async () => {
-    // First create a real user
-    const createResponse = await server.inject({
-      method: 'POST',
-      url: '/api/users',
-      headers: {
-        Authorization: `Bearer ${authToken}`,
-      },
-      payload: {
-        name: 'Test User',
-        email: 'test-delete-error@example.com',
-      },
-    });
-    const createdUser = JSON.parse(createResponse.body);
-
     // Mock User.destroy to throw an error
     vi.spyOn(User, 'destroy').mockRejectedValueOnce(new Error('Delete operation failed'));
 
+    // Try to delete own user
     const response = await server.inject({
       method: 'DELETE',
-      url: `/api/users/${createdUser.id}`,
+      url: `/api/users/${testUserId}`,
       headers: {
         Authorization: `Bearer ${authToken}`,
       },

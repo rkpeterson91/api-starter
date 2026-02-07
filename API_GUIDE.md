@@ -122,21 +122,37 @@ curl -X POST http://localhost:3000/auth/logout
 
 #### Create User
 
+**Note:** Only admins can create users with the 'admin' role. Regular users creating accounts will default to 'user' role.
+
 ```bash
+# Create a regular user (any authenticated user)
 curl -X POST http://localhost:3000/api/users \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -d '{"name":"John Doe","email":"john@example.com"}'
+
+# Create an admin user (admin only)
+curl -X POST http://localhost:3000/api/users \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
+  -d '{"name":"Admin User","email":"admin@example.com","role":"admin"}'
 
 # Response (201 Created)
 {
   "id": 1,
   "name": "John Doe",
   "email": "john@example.com",
+  "role": "user",
   "oauthProvider": null,
   "oauthId": null,
   "createdAt": "2026-01-31T12:00:00.000Z",
   "updatedAt": "2026-01-31T12:00:00.000Z"
+}
+
+# Error response when non-admin tries to create admin (403 Forbidden)
+{
+  "error": "Insufficient permissions to create admin users",
+  "statusCode": 403
 }
 ```
 
@@ -180,7 +196,10 @@ curl http://localhost:3000/api/users/1 \
 
 #### Update User
 
+**Note:** Users can only update their own account. Admins can update any user.
+
 ```bash
+# Update own account
 curl -X PUT http://localhost:3000/api/users/1 \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
@@ -191,20 +210,35 @@ curl -X PUT http://localhost:3000/api/users/1 \
   "id": 1,
   "name": "Jane Doe",
   "email": "jane@example.com",
+  "role": "user",
   "oauthProvider": null,
   "oauthId": null,
   "createdAt": "2026-01-31T12:00:00.000Z",
   "updatedAt": "2026-01-31T12:00:10.000Z"
 }
+
+# Error response when trying to update another user (403 Forbidden)
+{
+  "error": "Insufficient permissions to update this user",
+  "statusCode": 403
+}
 ```
 
 #### Delete User
+
+**Note:** Users can only delete their own account. Admins can delete any user.
 
 ```bash
 curl -X DELETE http://localhost:3000/api/users/1 \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 
 # Response (204 No Content)
+
+# Error response when trying to delete another user (403 Forbidden)
+{
+  "error": "Insufficient permissions to delete this user",
+  "statusCode": 403
+}
 ```
 
 ### Admin Operations (RBAC)
