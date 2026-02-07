@@ -9,9 +9,7 @@ export default defineConfig({
     globalSetup: './vitest.setup.ts',
     // Run tests sequentially to avoid database conflicts
     pool: 'forks',
-    poolOptions: {
-      singleFork: true,
-    },
+    singleFork: true,
     env: {
       NODE_ENV: 'test',
       DB_NAME: process.env.DB_NAME || 'api_starter_db_test',

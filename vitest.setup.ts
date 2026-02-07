@@ -27,8 +27,8 @@ export async function setup() {
     });
     console.log('✓ Migrations applied successfully');
 
-    // Close connection after setup
-    await sequelize.close();
+    // Keep connection open for tests - they will reuse the connection pool
+    // Tests call sequelize.authenticate() which will use the existing connection
     console.log('✓ Setup complete - tests will now run\n');
   } catch (error) {
     console.error('✗ Failed to setup test database:', error);
@@ -40,5 +40,11 @@ export async function setup() {
  * Global test teardown - runs once after all test suites
  */
 export async function teardown() {
-  // Cleanup can be added here if needed
+  // Close database connection after all tests complete
+  try {
+    await sequelize.close();
+    console.log('\n✓ Database connection closed');
+  } catch (error) {
+    console.error('✗ Failed to close database connection:', error);
+  }
 }
