@@ -207,6 +207,82 @@ curl -X DELETE http://localhost:3000/api/users/1 \
 # Response (204 No Content)
 ```
 
+### Admin Operations (RBAC)
+
+**Admin-only routes requiring admin role**
+
+#### List All Users
+
+```bash
+curl http://localhost:3000/api/admin/users \
+  -H "Authorization: Bearer YOUR_ADMIN_TOKEN"
+
+# Response (200 OK)
+[
+  {
+    "id": 1,
+    "name": "Admin User",
+    "email": "admin@example.com",
+    "role": "admin",
+    "createdAt": "2026-02-07T12:00:00.000Z",
+    "updatedAt": "2026-02-07T12:00:00.000Z"
+  },
+  {
+    "id": 2,
+    "name": "Regular User",
+    "email": "user@example.com",
+    "role": "user",
+    "createdAt": "2026-02-07T12:10:00.000Z",
+    "updatedAt": "2026-02-07T12:10:00.000Z"
+  }
+]
+```
+
+#### Update User Role
+
+```bash
+curl -X PATCH http://localhost:3000/api/admin/users/2/role \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
+  -d '{"role":"admin"}'
+
+# Response (200 OK)
+{
+  "id": 2,
+  "name": "Regular User",
+  "email": "user@example.com",
+  "role": "admin",
+  "createdAt": "2026-02-07T12:10:00.000Z",
+  "updatedAt": "2026-02-07T12:15:00.000Z"
+}
+
+# Error response for non-admin (403 Forbidden)
+{
+  "statusCode": 403,
+  "error": "Forbidden",
+  "message": "Access denied. Required role: admin"
+}
+```
+
+#### Delete User (Admin)
+
+```bash
+curl -X DELETE http://localhost:3000/api/admin/users/2 \
+  -H "Authorization: Bearer YOUR_ADMIN_TOKEN"
+
+# Response (200 OK)
+{
+  "message": "User deleted successfully"
+}
+
+# Cannot delete yourself (400 Bad Request)
+{
+  "statusCode": 400,
+  "error": "Bad Request",
+  "message": "Cannot delete your own account"
+}
+```
+
 ## 🌍 Internationalization
 
 The API supports multiple languages for error messages:
@@ -254,6 +330,7 @@ Supported languages: English (en), Spanish (es), French (fr)
 - `204 No Content` - Successful DELETE request
 - `400 Bad Request` - Invalid request body/parameters
 - `401 Unauthorized` - Missing or invalid authentication
+- `403 Forbidden` - Insufficient permissions (RBAC)
 - `404 Not Found` - Resource not found
 - `500 Internal Server Error` - Server error
 - `503 Service Unavailable` - OAuth not configured

@@ -1,6 +1,6 @@
 # API Starter
 
-A modern Node.js API template with TypeScript, Fastify, PostgreSQL, and OpenAPI docs. Features optional multi-provider OAuth (Google, GitHub, Microsoft), i18n support, and a production-ready setup.
+A modern Node.js API template with TypeScript, Fastify, PostgreSQL, and OpenAPI docs. Features optional multi-provider OAuth (Google, GitHub, Microsoft), role-based access control (RBAC), i18n support, and a production-ready setup.
 
 ## 🚀 One-Command Setup
 
@@ -120,6 +120,33 @@ pnpm docker:down  # Stop
 ```
 
 See [DOCKER.md](DOCKER.md) for CI/CD setup with GitHub Actions.
+
+## 🔐 Role-Based Access Control (RBAC)
+
+Built-in user role system with two roles:
+
+- **user** - Default role for regular users
+- **admin** - Administrative access to manage users
+
+Admin endpoints:
+
+- `GET /api/admin/users` - List all users
+- `PATCH /api/admin/users/:id/role` - Update user role
+- `DELETE /api/admin/users/:id` - Delete user
+
+Easily protect routes by role:
+
+```typescript
+fastify.get(
+  '/admin-only',
+  {
+    onRequest: [fastify.authenticate, fastify.requireRole('admin')],
+  },
+  handler
+);
+```
+
+See [API_GUIDE.md](API_GUIDE.md) for detailed usage.
 
 ## 🌍 Internationalization
 

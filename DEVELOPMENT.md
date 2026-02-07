@@ -16,15 +16,18 @@ src/
 │   └── messages.ts         # Multi-language translations (en, es, fr)
 ├── models/
 │   ├── index.ts            # Model exports
-│   └── User.ts             # User model with OAuth fields
+│   └── User.ts             # User model with OAuth and role fields
 ├── plugins/
 │   ├── auth.ts             # Authentication (OAuth2, JWT, cookies)
+│   ├── rbac.ts             # Role-based access control
 │   └── swagger.ts          # OpenAPI documentation
 ├── routes/
 │   ├── auth/               # /auth endpoints
 │   │   └── index.ts
 │   └── api/                # /api endpoints
-│       └── users/          # /api/users CRUD operations
+│       ├── users/          # /api/users CRUD operations
+│       │   └── index.ts
+│       └── admin/          # /api/admin admin-only operations
 │           └── index.ts
 ├── schemas/
 │   └── common.ts           # Shared JSON schemas (DRY principle)
@@ -153,6 +156,38 @@ return sendError(reply, 404, messages.errors.userNotFound);
 ```
 
 Languages auto-detected from `Accept-Language` header.
+
+### Role-Based Access Control (RBAC)
+
+Protect routes with role requirements:
+
+```typescript
+// Single role
+fastify.get(
+  '/admin-only',
+  {
+    onRequest: [fastify.authenticate, fastify.requireRole('admin')],
+  },
+  handler
+);
+
+// Multiple roles
+fastify.get(
+  '/user-or-admin',
+  {
+    onRequest: [fastify.authenticate, fastify.requireRole(['user', 'admin'])],
+  },
+  handler
+);
+
+// In handler
+await request.requireRole('admin'); // Throws 403 if not admin
+```
+
+Roles are stored in the `role` column of the `users` table:
+
+- `'user'` - Default role for all new users
+- `'admin'` - Administrative access
 
 ### Optimized Database Queries
 
