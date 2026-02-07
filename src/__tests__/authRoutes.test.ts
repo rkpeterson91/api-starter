@@ -14,11 +14,8 @@ describe('Authentication Routes', () => {
   beforeAll(async () => {
     await sequelize.authenticate();
 
-    // Drop all tables to ensure clean slate
-    await sequelize.getQueryInterface().dropAllTables();
-
-    // Recreate all tables with new schema
-    await sequelize.sync();
+    // Tables are already created by global setup via migrations
+    // No need to drop/recreate here - just clean up test data
 
     await server.register(authPlugin);
     await server.register(authRoutes);

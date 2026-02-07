@@ -11,14 +11,11 @@ describe('User CRUD Operations', () => {
   let authToken: string;
 
   beforeAll(async () => {
-    // Connect to test database and sync models
+    // Connect to test database
     await sequelize.authenticate();
 
-    // Drop all tables to ensure clean slate
-    await sequelize.getQueryInterface().dropAllTables();
-
-    // Recreate all tables with new schema
-    await sequelize.sync();
+    // Tables are already created by global setup via migrations
+    // No need to drop/recreate here - just clean up test data
 
     // Register auth plugin and routes
     await server.register(authPlugin);

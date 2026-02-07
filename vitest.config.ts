@@ -5,6 +5,8 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: ['src/**/*.test.ts'],
+    // Global setup runs once before all tests to initialize DB with migrations
+    globalSetup: './vitest.setup.ts',
     // Run tests sequentially to avoid database conflicts
     pool: 'forks',
     poolOptions: {
