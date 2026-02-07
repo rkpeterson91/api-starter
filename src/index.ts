@@ -2,8 +2,8 @@ import { buildServer } from './server.js';
 import { connectDatabase } from './database/connection.js';
 import { config } from './config/index.js';
 import './models/index.js';
-import { userRoutes } from './routes/userRoutes.js';
-import { authRoutes } from './routes/authRoutes.js';
+import { userRoutes } from './routes/api/users/index.js';
+import { authRoutes } from './routes/auth/index.js';
 import authPlugin from './plugins/auth.js';
 import swaggerPlugin from './plugins/swagger.js';
 

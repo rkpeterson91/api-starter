@@ -21,8 +21,11 @@ src/
 │   ├── auth.ts             # Authentication (OAuth2, JWT, cookies)
 │   └── swagger.ts          # OpenAPI documentation
 ├── routes/
-│   ├── authRoutes.ts       # Authentication endpoints
-│   └── userRoutes.ts       # User CRUD operations
+│   ├── auth/               # /auth endpoints
+│   │   └── index.ts
+│   └── api/                # /api endpoints
+│       └── users/          # /api/users CRUD operations
+│           └── index.ts
 ├── schemas/
 │   └── common.ts           # Shared JSON schemas (DRY principle)
 ├── scripts/

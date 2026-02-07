@@ -3,7 +3,7 @@ import { buildServer } from '../server.js';
 import { sequelize } from '../database/connection.js';
 import { User } from '../models/index.js';
 import { Op } from 'sequelize';
-import { userRoutes } from '../routes/userRoutes.js';
+import { userRoutes } from '../routes/api/users/index.js';
 import authPlugin from '../plugins/auth.js';
 
 describe('User CRUD Operations', () => {
@@ -241,7 +241,7 @@ describe('User CRUD Operations', () => {
 
   it('should handle duplicate email errors', async () => {
     // Create first user
-    await server.inject({
+    const firstResponse = await server.inject({
       method: 'POST',
       url: '/api/users',
       headers: {
@@ -252,6 +252,7 @@ describe('User CRUD Operations', () => {
         email: 'duplicate@example.com',
       },
     });
+    expect(firstResponse.statusCode).toBe(201);
 
     // Try to create second user with same email
     const response = await server.inject({

@@ -125,7 +125,10 @@ src/
 ├── i18n/          # Translations
 ├── models/        # Sequelize models
 ├── plugins/       # Fastify plugins (auth, swagger)
-├── routes/        # API route handlers
+├── routes/        # API route handlers (by URL)
+│   ├── auth/      # /auth routes
+│   └── api/       # /api routes
+│       └── users/ # /api/users routes
 ├── schemas/       # Shared JSON schemas
 ├── utils/         # Helper utilities
 └── __tests__/     # Test files
