@@ -22,10 +22,11 @@ This guide explains how to deploy the API to AWS cloud services.
 1. **AWS RDS PostgreSQL** instance provisioned
 2. Security groups configured to allow your service to connect
 3. Database credentials stored securely (AWS Secrets Manager recommended)
+4. **For App Runner**: VPC Connector configured to access RDS in your VPC
 
 ## Environment Variables for AWS
 
-Set these in your AWS service (ECS, Elastic Beanstalk, etc.):
+Set these in your AWS service (App Runner, ECS, Elastic Beanstalk, etc.):
 
 ```bash
 NODE_ENV=production
@@ -82,7 +83,27 @@ pnpm migrate
 2. Deploy through EB CLI or console
 3. Configure environment variables in EB console
 
-#### Option C: EC2
+#### Option C: App Runner (Recommended for simplicity)
+
+1. **Run migrations first** (one-time setup):
+   - Option 1: Use AWS Cloud9 or EC2 in same VPC
+   - Option 2: Connect from local via VPN/bastion host
+   - Run: `pnpm migrate`
+
+2. **Create App Runner service**:
+   - Source: GitHub repository (automatic deployments) or ECR
+   - Build settings: Use Dockerfile
+   - VPC: Configure VPC Connector to access RDS
+   - Environment variables: Add all variables from above
+   - Port: 3000 (automatically detected from EXPOSE in Dockerfile)
+   - Health check: `/health` endpoint
+
+3. **Deploy**:
+   - App Runner automatically builds and deploys
+   - Get the App Runner URL from console
+   - Update `APP_URL` environment variable if needed
+
+#### Option D: EC2
 
 1. SSH into EC2 instance
 2. Clone repository
@@ -92,29 +113,149 @@ pnpm migrate
 
 ## Database Migrations
 
-### Create a new migration
+Migrations are critical for production deployments. Unlike local development which uses `sequelize.sync()`, AWS deployments require explicit migration management.
+
+### Migration Commands
+
+#### Create a new migration
 
 ```bash
 pnpm migrate:create add-user-profile
 ```
 
-### Run migrations
+#### Run migrations
 
 ```bash
 pnpm migrate
 ```
 
-### Check migration status
+#### Check migration status
 
 ```bash
 pnpm migrate:status
 ```
 
-### Rollback last migration
+#### Rollback last migration
 
 ```bash
 pnpm migrate:undo
 ```
+
+### Running Migrations on AWS
+
+The approach depends on your deployment method:
+
+#### Method 1: AWS Cloud9 (Recommended for App Runner)
+
+1. Launch Cloud9 environment in same VPC as RDS
+2. Clone your repository
+3. Install dependencies: `pnpm install`
+4. Set environment variables:
+   ```bash
+   export DB_HOST=your-rds-endpoint.region.rds.amazonaws.com
+   export DB_PORT=5432
+   export DB_NAME=api_starter_db
+   export DB_USER=postgres
+   export DB_PASSWORD=your-password
+   export DB_SSL=true
+   ```
+5. Run migrations: `pnpm migrate`
+
+#### Method 2: EC2 Bastion Host
+
+1. Launch EC2 instance in same VPC as RDS
+2. SSH into instance
+3. Install Node.js and pnpm:
+   ```bash
+   curl -fsSL https://fnm.vercel.app/install | bash
+   source ~/.bashrc
+   fnm install 24
+   npm install -g pnpm
+   ```
+4. Clone repository and run migrations as in Method 1
+
+#### Method 3: Local Connection via Bastion/VPN
+
+1. Set up SSH tunnel to bastion host:
+   ```bash
+   ssh -i your-key.pem -L 5433:your-rds-endpoint:5432 ec2-user@bastion-ip
+   ```
+2. Update connection to use localhost:
+   ```bash
+   export DB_HOST=localhost
+   export DB_PORT=5433
+   ```
+3. Run migrations: `pnpm migrate`
+
+#### Method 4: ECS One-Off Task
+
+For ECS deployments, create a one-off task:
+
+1. Use same task definition as your service
+2. Override command: `["sh", "-c", "pnpm migrate"]`
+3. Run task in same VPC/subnet as your service
+4. Check CloudWatch logs for migration output
+
+#### Method 5: AWS Lambda (Advanced)
+
+For automated migrations on deployment:
+
+1. Create Lambda function with Node.js runtime
+2. Package your app with migrations
+3. Configure Lambda in same VPC as RDS
+4. Trigger Lambda before App Runner/ECS deployment
+5. Lambda runs `pnpm migrate` and exits
+
+### Migration Best Practices
+
+1. **Always backup before migrations**:
+
+   ```bash
+   aws rds create-db-snapshot \
+     --db-instance-identifier your-db-instance \
+     --db-snapshot-identifier pre-migration-$(date +%Y%m%d-%H%M%S)
+   ```
+
+2. **Test migrations on staging first**
+   - Create staging RDS instance
+   - Run migrations there first
+   - Verify application works
+   - Then apply to production
+
+3. **Check migration status before deployment**:
+
+   ```bash
+   pnpm migrate:status
+   ```
+
+4. **Keep migrations reversible**:
+   - Always include `down()` method
+   - Test rollback procedure
+   - Document breaking changes
+
+5. **Monitor migration execution**:
+   - Migrations run synchronously
+   - Large migrations may time out
+   - Consider breaking large migrations into smaller ones
+
+### Automated Migration Workflow
+
+For CI/CD pipelines with GitHub Actions:
+
+```yaml
+# .github/workflows/deploy.yml
+- name: Run Migrations
+  run: |
+    export DB_HOST=${{ secrets.DB_HOST }}
+    export DB_PORT=5432
+    export DB_NAME=${{ secrets.DB_NAME }}
+    export DB_USER=${{ secrets.DB_USER }}
+    export DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+    export DB_SSL=true
+    pnpm migrate
+```
+
+**Note**: This requires GitHub Actions runner to have network access to RDS (self-hosted runner in VPC or VPN connection).
 
 ## Scripts Overview
 
@@ -128,7 +269,11 @@ pnpm migrate:undo
 
 ## Health Checks
 
-The Dockerfile includes a health check endpoint at `/health`. Configure your AWS load balancer to use this endpoint.
+The application includes a health check endpoint at `/health`:
+
+- **App Runner**: Configure health check path to `/health` in service settings
+- **ECS/ALB**: Configure your load balancer target group to use this endpoint
+- **Elastic Beanstalk**: Health check is auto-configured
 
 ## SSL/TLS Configuration
 
@@ -141,6 +286,8 @@ When `DB_SSL=true`, the application will connect to RDS using SSL. This is autom
 - Check security group allows inbound traffic on port 5432
 - Verify RDS endpoint is correct
 - Confirm credentials are accurate
+- **App Runner**: Ensure VPC Connector is properly configured and associated with your service
+- **App Runner**: Verify RDS security group allows inbound from VPC Connector's security group
 
 ### "Table doesn't exist"
 
@@ -151,3 +298,10 @@ When `DB_SSL=true`, the application will connect to RDS using SSL. This is autom
 
 - Application auto-detects AWS by checking for `AWS_REGION`, `AWS_EXECUTION_ENV`, or `ECS_CONTAINER_METADATA_URI`
 - Set `NODE_ENV=production` to force production mode
+
+### App Runner: Migrations not running
+
+- App Runner doesn't support pre-deployment tasks
+- Run migrations manually before first deployment or after schema changes
+- Use Cloud9, EC2, or local connection with proper VPC access
+- Consider using AWS Lambda or ECS scheduled task for automated migration runs
