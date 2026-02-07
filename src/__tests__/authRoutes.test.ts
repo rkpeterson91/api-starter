@@ -14,11 +14,11 @@ describe('Authentication Routes', () => {
   beforeAll(async () => {
     await sequelize.authenticate();
 
-    // Only sync if tables don't exist
-    const tables = await sequelize.getQueryInterface().showAllTables();
-    if (tables.length === 0) {
-      await sequelize.sync();
-    }
+    // Drop all tables to ensure clean slate
+    await sequelize.getQueryInterface().dropAllTables();
+
+    // Recreate all tables with new schema
+    await sequelize.sync();
 
     await server.register(authPlugin);
     await server.register(authRoutes);

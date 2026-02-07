@@ -8,9 +8,7 @@ export default defineConfig({
     // Run tests sequentially to avoid database conflicts
     pool: 'forks',
     poolOptions: {
-      forks: {
-        singleFork: true,
-      },
+      singleFork: true,
     },
     env: {
       NODE_ENV: 'test',
