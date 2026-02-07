@@ -168,8 +168,13 @@ JWT_SECRET=change-this-to-a-long-random-string
 APP_URL=http://localhost:3000
 
 # OAuth (Optional - leave blank to skip)
+# OAuth Providers (optional - configure any or all)
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
+# GITHUB_CLIENT_ID=
+# GITHUB_CLIENT_SECRET=
+# MICROSOFT_CLIENT_ID=
+# MICROSOFT_CLIENT_SECRET=
 ```
 
 **Generate secure JWT secret:**
@@ -271,7 +276,11 @@ services:
 
 **Update .env.docker accordingly**
 
-## 🔐 Google OAuth Setup (Optional)
+## 🔐 OAuth Setup (Optional)
+
+The API supports multiple OAuth providers: Google, GitHub, and Microsoft.
+
+### Google OAuth Setup
 
 ### Step 1: Create Google Cloud Project
 
@@ -323,15 +332,52 @@ GOOGLE_CLIENT_SECRET=GOCSPX-abc123def456
 # Restart server
 pnpm dev
 
-# Check OAuth status
-curl http://localhost:3000/auth/status
+# Check available OAuth providers
+curl http://localhost:3000/auth/providers
 
 # Should return:
-# {"googleOAuthConfigured":true,"loginUrl":"/auth/google"}
+# {"providers":[{"name":"google","displayName":"Google","loginUrl":"/auth/google/callback"}]}
 
 # Test in browser
-open http://localhost:3000/auth/google
+open http://localhost:3000/auth/google/callback
 ```
+
+### GitHub OAuth Setup (Optional)
+
+1. Visit [GitHub Developer Settings](https://github.com/settings/developers)
+2. Click "New OAuth App"
+3. Fill in application details:
+   - Application name: "My API"
+   - Homepage URL: `http://localhost:3000` (dev) or your production URL
+   - Authorization callback URL: `http://localhost:3000/auth/github/callback`
+4. Click "Register application"
+5. Copy Client ID and generate a new Client Secret
+6. Add to `.env`:
+   ```env
+   GITHUB_CLIENT_ID=your-github-client-id
+   GITHUB_CLIENT_SECRET=your-github-client-secret
+   ```
+
+### Microsoft OAuth Setup (Optional)
+
+1. Visit [Azure Portal](https://portal.azure.com/)
+2. Go to "Azure Active Directory" → "App registrations"
+3. Click "New registration"
+4. Fill in details:
+   - Name: "My API"
+   - Supported account types: Choose appropriate option
+   - Redirect URI: Web - `http://localhost:3000/auth/microsoft/callback`
+5. Click "Register"
+6. Copy the "Application (client) ID"
+7. Go to "Certificates & secrets" → "New client secret"
+8. Copy the secret value
+9. Add to `.env`:
+   ```env
+   MICROSOFT_CLIENT_ID=your-microsoft-client-id
+   MICROSOFT_CLIENT_SECRET=your-microsoft-client-secret
+   ```
+
+**Note:** For more details on OAuth setup, see [OAUTH_PROVIDERS.md](OAUTH_PROVIDERS.md)
 
 ## 🧪 Testing Setup
 
@@ -475,7 +521,7 @@ nvm alias default 24.13.0
 
 ### OAuth Not Working
 
-**Error:** `Google OAuth not configured`
+**Error:** `No OAuth providers configured`
 
 **Solutions:**
 
@@ -484,6 +530,9 @@ nvm alias default 24.13.0
    ```bash
    echo $GOOGLE_CLIENT_ID
    echo $GOOGLE_CLIENT_SECRET
+   # Or check other providers
+   echo $GITHUB_CLIENT_ID
+   echo $MICROSOFT_CLIENT_ID
    ```
 
 2. **Verify .env is loaded:**

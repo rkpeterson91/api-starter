@@ -16,17 +16,20 @@ The interactive docs include:
 
 ## 🔐 Authentication Flow
 
-### Production Flow (Google OAuth)
+### Production Flow (OAuth)
 
-1. **Login**: Navigate to `http://localhost:3000/auth/google`
-2. **Authorize**: Sign in with your Google account
-3. **Redirect**: After successful login, you'll receive a JWT token
-4. **Cookie**: Refresh token automatically stored in httpOnly cookie (7 days)
-5. **Use Token**: Include JWT in `Authorization: Bearer <token>` header
+Supports multiple OAuth providers: Google, GitHub, Microsoft
+
+1. **Check Providers**: GET `/auth/providers` to see available providers
+2. **Login**: Navigate to `/auth/{provider}/callback` (e.g., `/auth/google/callback`)
+3. **Authorize**: Sign in with your chosen OAuth provider
+4. **Redirect**: After successful login, you'll receive a JWT token
+5. **Cookie**: Refresh token automatically stored in httpOnly cookie (7 days)
+6. **Use Token**: Include JWT in `Authorization: Bearer <token>` header
 
 ### Development Flow (Test Tokens)
 
-For local development without Google OAuth:
+For local development without OAuth:
 
 ```bash
 # Generate a test token
@@ -61,23 +64,35 @@ curl http://localhost:3000/health
 
 ### Authentication Endpoints
 
-#### Check OAuth Configuration
+#### Get Available OAuth Providers
 
 ```bash
-curl http://localhost:3000/auth/status
+curl http://localhost:3000/auth/providers
 
 # Response
 {
-  "googleOAuthConfigured": true,
-  "loginUrl": "/auth/google"
+  "providers": [
+    {
+      "name": "google",
+      "displayName": "Google",
+      "loginUrl": "/auth/google/callback"
+    },
+    {
+      "name": "github",
+      "displayName": "GitHub",
+      "loginUrl": "/auth/github/callback"
+    }
+  ]
 }
 ```
 
-#### Login with Google (Browser)
+#### Login with OAuth Provider (Browser)
 
 ```bash
-# Visit in browser:
-http://localhost:3000/auth/google
+# Visit in browser (use any configured provider):
+http://localhost:3000/auth/google/callback
+http://localhost:3000/auth/github/callback
+http://localhost:3000/auth/microsoft/callback
 ```
 
 #### Generate Development Token
@@ -118,7 +133,8 @@ curl -X POST http://localhost:3000/api/users \
   "id": 1,
   "name": "John Doe",
   "email": "john@example.com",
-  "googleId": null,
+  "oauthProvider": null,
+  "oauthId": null,
   "createdAt": "2026-01-31T12:00:00.000Z",
   "updatedAt": "2026-01-31T12:00:00.000Z"
 }
@@ -136,7 +152,8 @@ curl http://localhost:3000/api/users \
     "id": 1,
     "name": "John Doe",
     "email": "john@example.com",
-    "googleId": null,
+    "oauthProvider": null,
+    "oauthId": null,
     "createdAt": "2026-01-31T12:00:00.000Z",
     "updatedAt": "2026-01-31T12:00:00.000Z"
   }
@@ -154,7 +171,8 @@ curl http://localhost:3000/api/users/1 \
   "id": 1,
   "name": "John Doe",
   "email": "john@example.com",
-  "googleId": null,
+  "oauthProvider": null,
+  "oauthId": null,
   "createdAt": "2026-01-31T12:00:00.000Z",
   "updatedAt": "2026-01-31T12:00:00.000Z"
 }
@@ -173,7 +191,8 @@ curl -X PUT http://localhost:3000/api/users/1 \
   "id": 1,
   "name": "Jane Doe",
   "email": "jane@example.com",
-  "googleId": null,
+  "oauthProvider": null,
+  "oauthId": null,
   "createdAt": "2026-01-31T12:00:00.000Z",
   "updatedAt": "2026-01-31T12:00:10.000Z"
 }

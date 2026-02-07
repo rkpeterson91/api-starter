@@ -26,7 +26,6 @@ describe('User CRUD Operations', () => {
     const testUser = await User.create({
       name: 'Test User',
       email: 'test@example.com',
-      googleId: 'test-google-id',
     });
 
     authToken = server.jwt.sign({

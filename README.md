@@ -1,6 +1,6 @@
 # API Starter
 
-A modern Node.js API template with TypeScript, Fastify, PostgreSQL, and OpenAPI docs. Features optional Google OAuth2, i18n support, and a production-ready setup.
+A modern Node.js API template with TypeScript, Fastify, PostgreSQL, and OpenAPI docs. Features optional multi-provider OAuth (Google, GitHub, Microsoft), i18n support, and a production-ready setup.
 
 ## 🚀 One-Command Setup
 
@@ -11,7 +11,7 @@ A modern Node.js API template with TypeScript, Fastify, PostgreSQL, and OpenAPI 
 This interactive script will:
 
 - Copy `.env.example` to `.env`
-- Optionally configure Google OAuth
+- Optionally configure OAuth providers (Google, GitHub, Microsoft)
 - Install dependencies
 - Create databases
 - Get you ready to code!
@@ -68,17 +68,32 @@ curl http://localhost:3000/api/users \
   -H "Authorization: Bearer YOUR_TOKEN_HERE"
 ```
 
-### Option 2: Google OAuth (Optional)
+### Option 2: OAuth Providers (Optional)
 
-1. Get credentials from [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
+Supports Google, GitHub, and Microsoft OAuth:
+
+1. Get credentials from your chosen provider:
+   - [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
+   - [GitHub Developer Settings](https://github.com/settings/developers)
+   - [Azure Portal](https://portal.azure.com/)
 2. Add to `.env`:
    ```env
+   # Configure any or all providers
    GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
    GOOGLE_CLIENT_SECRET=your-client-secret
+   GITHUB_CLIENT_ID=your-github-client-id
+   GITHUB_CLIENT_SECRET=your-github-client-secret
+   MICROSOFT_CLIENT_ID=your-microsoft-client-id
+   MICROSOFT_CLIENT_SECRET=your-microsoft-client-secret
    ```
-3. Login via: `http://localhost:3000/auth/google`
+3. Login via: `http://localhost:3000/auth/{provider}/callback`
+   - `/auth/google/callback`
+   - `/auth/github/callback`
+   - `/auth/microsoft/callback`
 
 **Note**: OAuth is optional - the API works perfectly without it using `/auth/dev/token`
+
+See [OAUTH_PROVIDERS.md](OAUTH_PROVIDERS.md) for detailed setup instructions.
 
 ## 🛠️ Available Commands
 
@@ -169,9 +184,13 @@ DB_PASSWORD=postgres
 JWT_SECRET=change-this-in-production  # Generate: openssl rand -base64 32
 APP_URL=http://localhost:3000
 
-# Google OAuth (Optional)
+# OAuth Providers (Optional - configure any or all)
 GOOGLE_CLIENT_ID=your-id.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=your-secret
+GITHUB_CLIENT_ID=your-github-client-id
+GITHUB_CLIENT_SECRET=your-github-secret
+MICROSOFT_CLIENT_ID=your-microsoft-client-id
+MICROSOFT_CLIENT_SECRET=your-microsoft-secret
 ```
 
 **🔒 Security Note**: Always change `JWT_SECRET` in production!

@@ -62,7 +62,7 @@ scripts/
 ### Authentication
 
 - **@fastify/jwt** - JWT token generation and validation
-- **@fastify/oauth2** - Google OAuth2 integration (optional)
+- **@fastify/oauth2** - Multi-provider OAuth2 integration (Google, GitHub, Microsoft)
 - **@fastify/cookie** - Secure cookie management
 
 ### Documentation

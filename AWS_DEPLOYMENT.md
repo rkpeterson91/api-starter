@@ -46,9 +46,13 @@ JWT_SECRET=your-production-jwt-secret
 # App
 APP_URL=https://your-domain.com
 
-# Optional: OAuth
+# Optional: OAuth Providers (configure any or all)
 GOOGLE_CLIENT_ID=your-client-id
 GOOGLE_CLIENT_SECRET=your-client-secret
+GITHUB_CLIENT_ID=your-github-client-id
+GITHUB_CLIENT_SECRET=your-github-client-secret
+MICROSOFT_CLIENT_ID=your-microsoft-client-id
+MICROSOFT_CLIENT_SECRET=your-microsoft-client-secret
 ```
 
 ## Deployment Steps

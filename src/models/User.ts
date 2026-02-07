@@ -10,11 +10,6 @@ interface UserAttributes {
   oauthAccessToken?: string;
   oauthRefreshToken?: string;
   oauthTokenExpiresAt?: Date;
-  // Keep legacy fields for backward compatibility
-  googleId?: string;
-  googleAccessToken?: string;
-  googleRefreshToken?: string;
-  googleTokenExpiresAt?: Date;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -30,11 +25,6 @@ export class User extends Model<UserAttributes, UserCreationAttributes> implemen
   declare oauthAccessToken?: string;
   declare oauthRefreshToken?: string;
   declare oauthTokenExpiresAt?: Date;
-  // Keep legacy fields for backward compatibility
-  declare googleId?: string;
-  declare googleAccessToken?: string;
-  declare googleRefreshToken?: string;
-  declare googleTokenExpiresAt?: Date;
   declare readonly createdAt: Date;
   declare readonly updatedAt: Date;
 }
@@ -87,28 +77,6 @@ User.init(
       allowNull: true,
       field: 'oauth_token_expires_at',
       comment: 'OAuth token expiration time',
-    },
-    // Legacy Google-specific fields (kept for backward compatibility)
-    googleId: {
-      type: DataTypes.STRING(255),
-      allowNull: true,
-      unique: true,
-      field: 'google_id',
-    },
-    googleAccessToken: {
-      type: DataTypes.TEXT,
-      allowNull: true,
-      field: 'google_access_token',
-    },
-    googleRefreshToken: {
-      type: DataTypes.TEXT,
-      allowNull: true,
-      field: 'google_refresh_token',
-    },
-    googleTokenExpiresAt: {
-      type: DataTypes.DATE,
-      allowNull: true,
-      field: 'google_token_expires_at',
     },
   },
   {
