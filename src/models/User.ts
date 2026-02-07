@@ -1,10 +1,13 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import { sequelize } from '../database/connection.js';
 
+export type UserRole = 'user' | 'admin';
+
 interface UserAttributes {
   id: number;
   name: string;
   email: string;
+  role: UserRole;
   oauthProvider?: string;
   oauthId?: string;
   oauthAccessToken?: string;
@@ -20,6 +23,7 @@ export class User extends Model<UserAttributes, UserCreationAttributes> implemen
   declare id: number;
   declare name: string;
   declare email: string;
+  declare role: UserRole;
   declare oauthProvider?: string;
   declare oauthId?: string;
   declare oauthAccessToken?: string;
@@ -47,6 +51,12 @@ User.init(
       validate: {
         isEmail: true,
       },
+    },
+    role: {
+      type: DataTypes.ENUM('user', 'admin'),
+      allowNull: false,
+      defaultValue: 'user',
+      comment: 'User role for access control',
     },
     oauthProvider: {
       type: DataTypes.STRING(50),

@@ -17,6 +17,7 @@ export const userSchema = {
     id: { type: 'number' },
     name: { type: 'string' },
     email: { type: 'string', format: 'email' },
+    role: { type: 'string', enum: ['user', 'admin'] },
     oauthProvider: { type: ['string', 'null'] },
     oauthId: { type: ['string', 'null'] },
     createdAt: { type: 'string', format: 'date-time' },
