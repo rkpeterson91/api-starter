@@ -110,20 +110,11 @@ User.init(
       allowNull: true,
       field: 'google_token_expires_at',
     },
-    createdAt: {
-      type: DataTypes.DATE,
-      allowNull: false,
-      field: 'created_at',
-    },
-    updatedAt: {
-      type: DataTypes.DATE,
-      allowNull: false,
-      field: 'updated_at',
-    },
   },
   {
     sequelize,
     tableName: 'users',
     timestamps: true,
+    underscored: true,
   }
 );
