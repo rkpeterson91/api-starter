@@ -4,6 +4,7 @@ import { sequelize } from '../database/connection.js';
 import { User } from '../models/index.js';
 import { authRoutes } from '../routes/auth/index.js';
 import authPlugin from '../plugins/auth.js';
+import { Op } from 'sequelize';
 
 describe('Authentication Routes', () => {
   const server = buildServer();
@@ -41,8 +42,8 @@ describe('Authentication Routes', () => {
     await User.destroy({
       where: {
         email: {
-          [sequelize.Sequelize.Op.like]: '%@auth.test',
-          [sequelize.Sequelize.Op.notLike]: 'auth-test-user@auth.test',
+          [Op.like]: '%@auth.test',
+          [Op.notLike]: 'auth-test-user@auth.test',
         },
       },
     });
