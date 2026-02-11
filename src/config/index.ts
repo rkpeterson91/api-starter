@@ -1,8 +1,26 @@
 import 'dotenv/config';
 import type { OAuthProvider } from '../types/oauth.js';
 
+// Validate NODE_ENV
+const validEnvironments = ['development', 'test', 'staging', 'production'] as const;
+type Environment = (typeof validEnvironments)[number];
+const currentEnv = (process.env.NODE_ENV || 'development') as Environment;
+
+if (!validEnvironments.includes(currentEnv)) {
+  throw new Error(
+    `Invalid NODE_ENV: ${currentEnv}. Must be one of: ${validEnvironments.join(', ')}`
+  );
+}
+
+// Warn if using development mode in production-like environments
+if (currentEnv === 'development' && isCloudEnvironment()) {
+  console.warn(
+    '⚠️  WARNING: Running with NODE_ENV=development in a cloud environment. Set NODE_ENV=production for security and performance.'
+  );
+}
+
 // Detect if running in a cloud environment
-const isCloudEnvironment = () => {
+function isCloudEnvironment(): boolean {
   return !!(
     process.env.AWS_REGION ||
     process.env.AWS_EXECUTION_ENV ||
@@ -11,7 +29,7 @@ const isCloudEnvironment = () => {
     process.env.GOOGLE_CLOUD_PROJECT ||
     process.env.AZURE_FUNCTIONS_ENVIRONMENT
   );
-};
+}
 
 // Configure OAuth providers
 const providers: Record<string, OAuthProvider> = {
@@ -52,7 +70,11 @@ const getDatabaseName = () => {
 };
 
 export const config = {
-  env: process.env.NODE_ENV || 'development',
+  env: currentEnv,
+  isDevelopment: currentEnv === 'development',
+  isTest: currentEnv === 'test',
+  isStaging: currentEnv === 'staging',
+  isProduction: currentEnv === 'production',
   port: parseInt(process.env.PORT || '3000', 10),
   isCloudEnvironment: isCloudEnvironment(),
   database: {

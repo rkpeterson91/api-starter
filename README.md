@@ -368,6 +368,16 @@ Run tests with coverage:
 pnpm test:coverage
 ```
 
+## 📚 Documentation
+
+- **[Environment Setup Guide](ENVIRONMENT_SETUP.md)** - Configure environments (dev, staging, production)
+- **[API Guide](API_GUIDE.md)** - API endpoints and usage examples
+- **[Development Guide](DEVELOPMENT.md)** - Development workflow and code patterns
+- **[AWS Deployment](AWS_DEPLOYMENT.md)** - Deploy to AWS ECS/Fargate
+- **[Docker Guide](DOCKER.md)** - Docker and containerization
+- **[OAuth Setup](OAUTH_PROVIDERS.md)** - OAuth provider configuration
+- **[GitHub Actions](GITHUB_SETUP.md)** - CI/CD pipeline setup
+
 ## License
 
 ISC
